@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DesignScope - 双钻模型（高级）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; overflow: hidden; height: 100vh; width: 100vw; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 3px; }
+        
+        /* 智能助手动画 */
+        @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes reverse-orbit { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; filter: blur(25px); } 50% { opacity: 0.8; filter: blur(35px); } }
+        .ai-orbit-1 { animation: orbit 20s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-2 { animation: reverse-orbit 25s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-3 { animation: orbit 30s linear infinite; transform-origin: 60px 60px; }
+        .ai-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        
+        .bg-layer { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 80%, #1a0b2e 0%, #050505 100%); z-index: 0; }
+        .glow-spot { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+        .glow-1 { width: 600px; height: 600px; background: #8b5cf6; bottom: -200px; left: -100px; }
+        .glow-2 { width: 500px; height: 500px; background: #06b6d4; top: -100px; right: -100px; opacity: 0.3; }
+        .glow-3 { width: 400px; height: 400px; background: #ec4899; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; }
+        
+        .app-container { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; background: rgba(10, 10, 20, 0.3); }
+        
+        .top-navbar {
+            height: 64px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 24px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; }
+        .logo-text { font-size: 18px; font-weight: 600; color: white; }
+        .nav-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .page-title { font-size: 16px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .search-box { display: flex; align-items: center; gap: 8px; background: rgba(30, 30, 50, 0.5); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 24px; padding: 8px 16px; }
+        .search-icon { color: rgba(139, 92, 246, 0.7); }
+        .search-placeholder { font-size: 13px; color: rgba(255, 255, 255, 0.4); }
+        .zoom-control { font-size: 13px; color: rgba(255, 255, 255, 0.6); background: rgba(30, 30, 50, 0.5); padding: 6px 12px; border-radius: 20px; }
+        .action-icons { display: flex; gap: 8px; }
+        .action-icon { color: rgba(255, 255, 255, 0.5); cursor: pointer; }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; }
+        
+        .main-layout { flex: 1; display: flex; overflow: hidden; }
+        
+        .sidebar { width: 260px; background: rgba(15, 15, 25, 0.5); backdrop-filter: blur(8px); border-right: 1px solid rgba(139, 92, 246, 0.15); display: flex; flex-direction: column; padding: 20px 16px; }
+        .create-project-btn { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 28px; padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; color: white; font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 24px; transition: all 0.2s; }
+        .create-project-btn:hover { background: rgba(139, 92, 246, 0.3); border-color: rgba(139, 92, 246, 0.6); }
+        .sidebar-section { margin-bottom: 32px; }
+        .quick-actions { margin-bottom: 20px; }
+        .quick-btn { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 20px; padding: 8px 12px; margin: 8px 0; text-align: center; font-size: 12px; color: #a78bfa; cursor: pointer; transition: all 0.2s; }
+        .quick-btn:hover { background: rgba(139, 92, 246, 0.3); transform: translateX(4px); }
+        .sidebar-section.bottom { margin-top: auto; }
+        .section-title { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.5px; margin-bottom: 12px; padding-left: 8px; }
+        .category-item { padding: 10px 12px; margin: 4px 0; border-radius: 12px; font-size: 14px; color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s; }
+        .category-item.active { background: rgba(139, 92, 246, 0.25); color: white; }
+        .recent-item { padding: 8px 12px; font-size: 13px; color: rgba(255, 255, 255, 0.5); border-radius: 8px; cursor: pointer; }
+        .recent-item:hover { background: rgba(139, 92, 246, 0.1); }
+        
+        .canvas-area { flex: 1; display: flex; flex-direction: column; padding: 20px 24px; background: rgba(10, 10, 20, 0.4); overflow-x: auto; overflow-y: auto; }
+        .canvas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .template-title-section { display: flex; gap: 12px; }
+        .difficulty-badge { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #a78bfa; }
+        .category-badge { background: linear-gradient(135deg, #8b5cf620, #06b6d420); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: rgba(255, 255, 255, 0.8); }
+        .canvas-actions { display: flex; align-items: center; gap: 12px; }
+        .zoom-text, .share-text, .export-text { font-size: 13px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
+        .divider { width: 1px; height: 16px; background: rgba(255, 255, 255, 0.2); }
+        .canvas-description { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.15); }
+        
+        .graph-container { position: relative; flex: 1; min-height: 560px; overflow-x: auto; }
+        .lines-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .nodes-wrapper { position: relative; width: 2800px; height: 560px; margin: 0 auto; transition: transform 0.2s ease; transform-origin: 0 0; }
+        
+        .stage-card {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(6, 182, 212, 0.2));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.6);
+            border-radius: 50px;
+            padding: 8px 24px;
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.25);
+            top: 5px;
+        }
+        .stage-icon { font-size: 22px; }
+        .stage-name { font-size: 14px; font-weight: 700; color: #d8b4fe; letter-spacing: 1px; }
+        
+        .node-card {
+            position: absolute;
+            background: rgba(20, 15, 35, 0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            cursor: pointer;
+            z-index: 20;
+            width: 220px;
+            transition: all 0.2s;
+        }
+        .node-card.selected-node {
+            border: 2px solid #c084fc;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.5);
+            transform: scale(1.02);
+            background: rgba(45, 35, 70, 0.95);
+        }
+        .node-card:hover { border-color: rgba(139, 92, 246, 0.9); transform: translateY(-2px); }
+        .node-gradient-bar { height: 3px; background: linear-gradient(90deg, #06b6d4, #8b5cf6, #ec4899); width: 100%; }
+        .node-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0 12px; }
+        .node-icon { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; }
+        .user-icon { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .research-icon { background: linear-gradient(135deg, #06b6d4, #2dd4bf); }
+        .trend-icon { background: linear-gradient(135deg, #10b981, #34d399); }
+        .pain-icon { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .define-icon { background: linear-gradient(135deg, #f59e0b, #ec4899); }
+        .brainstorm-icon { background: linear-gradient(135deg, #10b981, #34d399); }
+        .sketch-icon { background: linear-gradient(135deg, #8b5cf6, #c084fc); }
+        .func-icon { background: linear-gradient(135deg, #06b6d4, #2dd4bf); }
+        .eval-icon { background: linear-gradient(135deg, #ef4444, #f97316); }
+        .test-icon { background: linear-gradient(135deg, #8b5cf6, #c084fc); }
+        .prototype-icon { background: linear-gradient(135deg, #ef4444, #f97316); }
+        .node-title { font-size: 12px; font-weight: 700; color: #ffffff; }
+        .node-preview { padding: 8px 12px; }
+        .preview-line { font-size: 9px; margin-bottom: 4px; line-height: 1.35; color: rgba(220, 220, 255, 0.7); }
+        .preview-label { color: #a78bfa; font-weight: 500; }
+        .node-tags { padding: 4px 12px 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .tag { background: rgba(139, 92, 246, 0.25); border-radius: 16px; padding: 2px 8px; font-size: 8px; font-weight: 500; color: #c084fc; }
+        
+        .canvas-footer { text-align: center; padding-top: 16px; font-size: 11px; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(139, 92, 246, 0.15); margin-top: 12px; }
+        
+        .inspector { width: 280px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px); border-left: 1px solid rgba(139, 92, 246, 0.15); display: flex; flex-direction: column; padding: 20px 16px; }
+        .inspector-header { font-size: 16px; font-weight: 600; color: white; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
+        .inspector-content { flex: 1; }
+        .inspector-section { margin-bottom: 24px; }
+        .section-label { font-size: 12px; font-weight: 600; color: rgba(139, 92, 246, 0.9); margin-bottom: 12px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); }
+        .divider-line { height: 1px; background: rgba(139, 92, 246, 0.15); margin: 16px 0; }
+        .history-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; color: rgba(255, 255, 255, 0.6); font-size: 11px; }
+        .history-avatar { width: 28px; height: 28px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); border-radius: 50%; }
+        .setting-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+        .color-preview { width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(90deg, #06b6d4, #8b5cf6); }
+        .upgrade-btn { background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; border-radius: 28px; padding: 12px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 20px; transition: all 0.2s; }
+        .upgrade-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4); }
+        
+        /* 底部按钮栏 */
+        .bottom-actions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
+            z-index: 150;
+        }
+        .action-btn {
+            background: rgba(15, 15, 25, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 40px;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #a78bfa;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: rgba(139, 92, 246, 0.3); transform: translateY(-2px); }
+        .action-btn svg { stroke: #a78bfa; width: 14px; height: 14px; }
+        
+        /* 智能助手 */
+        .ai-assistant {
+            position: fixed;
+            bottom: 80px;
+            right: 80px;
+            width: 90px;
+            height: 90px;
+            z-index: 200;
+            cursor: pointer;
+        }
+        .ai-assistant svg { width: 100%; height: 100%; overflow: visible; }
+        .ai-assistant-tooltip {
+            position: absolute;
+            right: 100px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: white;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .ai-assistant:hover .ai-assistant-tooltip { opacity: 1; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-layer"><div class="glow-spot glow-1"></div><div class="glow-spot glow-2"></div><div class="glow-spot glow-3"></div></div>
+    <div class="app-container">
+        <header class="top-navbar">
+            <div class="nav-left" id="backToTemplates"><div class="logo-icon">D</div><span class="logo-text">DesignScope</span></div>
+            <div class="nav-center"><span class="page-title">设计模板库</span></div>
+            <div class="nav-right">
+                <div class="search-box"><svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><line x1="15" y1="15" x2="21" y2="21"/></svg><span class="search-placeholder">搜索组件、模板或灵感。</span></div>
+                <div class="zoom-control" id="zoomIndicator">缩放100%</div>
+                <div class="action-icons"><svg class="action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><svg class="action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+        <div class="main-layout">
+            <aside class="sidebar">
+                <button class="create-project-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>创建新项目</button>
+                <div class="sidebar-section"><div class="section-title">模板分类</div>
+                    <div class="category-item">问题驱动设计</div>
+                    <div class="category-item">解决方案驱动设计</div>
+                    <div class="category-item active">双钻模型</div>
+                </div>
+                <div class="sidebar-section quick-actions">
+                    <div class="section-title">快捷操作</div>
+                    <div class="quick-btn" id="versionHistoryBtn">📜 版本历史</div>
+                    <div class="quick-btn" id="exportPageBtn">📤 导出项目</div>
+                </div>
+                <div class="sidebar-section bottom"><div class="section-title">最近使用</div>
+                    <div class="recent-item">企业级产品双钻流程</div>
+                    <div class="recent-item">复杂系统设计项目</div>
+                </div>
+            </aside>
+            <main class="canvas-area">
+                <div class="canvas-header">
+                    <div class="template-title-section"><div class="difficulty-badge">高级</div><div class="category-badge">双钻模型</div></div>
+                    <div class="canvas-actions">
+                        <span class="zoom-text" id="zoomInBtn">+ 放大</span>
+                        <span class="zoom-text" id="zoomOutBtn">- 缩小</span>
+                        <div class="divider"></div>
+                        <span class="share-text" id="shareBtn">分享</span>
+                        <span class="export-text" id="exportBtnTop">导出成果</span>
+                    </div>
+                </div>
+                <div class="canvas-description">💎 双钻模型 · 高级 | 遵循「发现 → 定义 → 发展 → 交付」的深度设计流程，适用于复杂系统或企业级产品。共15个节点。</div>
+                <div class="graph-container" id="graphContainer">
+                    <svg class="lines-svg" id="linesSvg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"></svg>
+                    <div class="nodes-wrapper" id="nodesWrapper">
+                        <!-- 阶段卡片 -->
+                        <div class="stage-card" style="left: 20px;"><div class="stage-icon">🔍</div><div class="stage-name">发现阶段</div></div>
+                        <div class="stage-card" style="left: 540px;"><div class="stage-icon">🎯</div><div class="stage-name">定义阶段</div></div>
+                        <div class="stage-card" style="left: 1100px;"><div class="stage-icon">💡</div><div class="stage-name">发展阶段</div></div>
+                        <div class="stage-card" style="left: 1700px;"><div class="stage-icon">✨</div><div class="stage-name">交付阶段</div></div>
+                        
+                        <!-- 发现阶段：4个节点 -->
+                        <div class="node-card" id="n1" style="left: 10px; top: 60px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon user-icon"></div><span class="node-title">大规模用户调研</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">样本量：</span>N=500</div><div class="preview-line"><span class="preview-label">方法：</span>问卷+深度访谈</div></div>
+                            <div class="node-tags"><span class="tag">定量研究</span><span class="tag">置信95%</span></div>
+                        </div>
+                        <div class="node-card" id="n2" style="left: 10px; top: 180px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon research-icon"></div><span class="node-title">竞品矩阵分析</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">分析：</span>直接/间接竞品</div><div class="preview-line"><span class="preview-label">机会点：</span>差异化定位</div></div>
+                            <div class="node-tags"><span class="tag">竞争分析</span><span class="tag">SWOT</span></div>
+                        </div>
+                        <div class="node-card" id="n3" style="left: 10px; top: 300px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon trend-icon"></div><span class="node-title">趋势洞察</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">技术/消费/社会趋势</span></div><div class="preview-line">健康意识持续提升</div></div>
+                            <div class="node-tags"><span class="tag">前瞻研究</span><span class="tag">PEST</span></div>
+                        </div>
+                        <div class="node-card" id="n4" style="left: 10px; top: 420px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon trend-icon"></div><span class="node-title">利益相关者地图</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">用户/渠道/供应链</span></div><div class="preview-line">竞争品牌/监管机构</div></div>
+                            <div class="node-tags"><span class="tag">系统视角</span><span class="tag">生态分析</span></div>
+                        </div>
+                        
+                        <!-- 定义阶段：3个节点 -->
+                        <div class="node-card" id="n5" style="left: 530px; top: 70px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon pain-icon"></div><span class="node-title">数据分析与聚类</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">用户分群：</span>3类典型用户</div><div class="preview-line">需求优先级矩阵</div></div>
+                            <div class="node-tags"><span class="tag">量化分析</span><span class="tag">K-means</span></div>
+                        </div>
+                        <div class="node-card" id="n6" style="left: 530px; top: 230px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon define-icon"></div><span class="node-title">问题系统建模</span></div>
+                            <div class="node-preview"><div class="preview-line">核心问题域分解</div><div class="preview-line">因果链路分析</div></div>
+                            <div class="node-tags"><span class="tag">系统思维</span><span class="tag">因果链</span></div>
+                        </div>
+                        <div class="node-card" id="n7" style="left: 530px; top: 390px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon define-icon"></div><span class="node-title">需求优先级定义</span></div>
+                            <div class="node-preview"><div class="preview-line">P0/P1/P2分级</div><div class="preview-line">技术依赖评估</div></div>
+                            <div class="node-tags"><span class="tag">优先级排序</span><span class="tag">MoSCoW</span></div>
+                        </div>
+                        
+                        <!-- 发展阶段：4个节点 -->
+                        <div class="node-card" id="n8" style="left: 1080px; top: 40px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon brainstorm-icon"></div><span class="node-title">概念生成工作坊</span></div>
+                            <div class="node-preview"><div class="preview-line">HMW问题转化</div><div class="preview-line">50+创意点产出</div></div>
+                            <div class="node-tags"><span class="tag">集体创意</span><span class="tag">设计思维</span></div>
+                        </div>
+                        <div class="node-card" id="n9" style="left: 1080px; top: 165px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon sketch-icon"></div><span class="node-title">概念草图与原型</span></div>
+                            <div class="node-preview"><div class="preview-line">10个概念草图</div><div class="preview-line">收敛至3个方向</div></div>
+                            <div class="node-tags"><span class="tag">快速原型</span><span class="tag">草图设计</span></div>
+                        </div>
+                        <div class="node-card" id="n10" style="left: 1080px; top: 290px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon func-icon"></div><span class="node-title">功能架构设计</span></div>
+                            <div class="node-preview"><div class="preview-line">三层架构划分</div><div class="preview-line">技术栈选型建议</div></div>
+                            <div class="node-tags"><span class="tag">系统架构</span><span class="tag">技术选型</span></div>
+                        </div>
+                        <div class="node-card" id="n11" style="left: 1080px; top: 415px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon brainstorm-icon"></div><span class="node-title">方案蓝图</span></div>
+                            <div class="node-preview"><div class="preview-line">核心方案概述</div><div class="preview-line">技术架构图</div></div>
+                            <div class="node-tags"><span class="tag">顶层设计</span><span class="tag">路线图</span></div>
+                        </div>
+                        
+                        <!-- 交付阶段：4个节点 -->
+                        <div class="node-card" id="n12" style="left: 1680px; top: 50px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon eval-icon"></div><span class="node-title">方案评估矩阵</span></div>
+                            <div class="node-preview"><div class="preview-line">加权评分评估</div><div class="preview-line">敏感性分析</div></div>
+                            <div class="node-tags"><span class="tag">多维度评估</span><span class="tag">PUGH矩阵</span></div>
+                        </div>
+                        <div class="node-card" id="n13" style="left: 1680px; top: 180px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon test-icon"></div><span class="node-title">多轮可用性测试</span></div>
+                            <div class="node-preview"><div class="preview-line">30用户8场景测试</div><div class="preview-line">满意度评分4.7/5</div></div>
+                            <div class="node-tags"><span class="tag">验证迭代</span><span class="tag">可用性测试</span></div>
+                        </div>
+                        <div class="node-card" id="n14" style="left: 1680px; top: 310px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon prototype-icon"></div><span class="node-title">高保真原型交付</span></div>
+                            <div class="node-preview"><div class="preview-line">Figma高保真原型</div><div class="preview-line">设计规范文档</div></div>
+                            <div class="node-tags"><span class="tag">设计交付</span><span class="tag">组件库</span></div>
+                        </div>
+                        <div class="node-card" id="n15" style="left: 1680px; top: 440px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon prototype-icon"></div><span class="node-title">商业化规划</span></div>
+                            <div class="node-preview"><div class="preview-line">市场策略与定价</div><div class="preview-line">供应链计划</div></div>
+                            <div class="node-tags"><span class="tag">战略落地</span><span class="tag">商业化</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="canvas-footer"><span>⚡ 共15个节点 | 双钻模型高级流程 | 点击卡片查看详情</span></div>
+            </main>
+            <aside class="inspector" id="inspectorPanel">
+                <div class="inspector-header">属性检查器</div>
+                <div class="inspector-content" id="inspectorContent">
+                    <div class="inspector-section"><div class="section-label">当前选中节点</div><div class="info-row"><span>节点类型</span><span id="inspectorType">方案评估矩阵</span></div><div class="info-row"><span>节点ID</span><span id="inspectorId">DD-012</span></div><div class="info-row"><span>创建时间</span><span>2025-05-06</span></div><div class="info-row"><span>所属阶段</span><span id="inspectorPhase">交付阶段</span></div></div>
+                    <div class="divider-line"></div>
+                    <div class="inspector-section"><div class="section-label">修改记录</div><div class="history-item"><div class="history-avatar"></div> 产品团队 更新了评估矩阵</div></div>
+                    <div class="divider-line"></div>
+                    <div class="inspector-section"><div class="section-label">线条设置</div><div class="setting-row"><span>连接线粗细</span><span>2px</span></div><div class="setting-row"><span>线条颜色</span><div class="color-preview"></div></div></div>
+                </div>
+                <button class="upgrade-btn">✨ 升级专业版</button>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 底部快捷按钮栏 -->
+    <div class="bottom-actions">
+        <div class="action-btn" id="versionBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v16h16V4H4z"/><polyline points="8 10 12 14 16 10"/></svg>版本历史</div>
+        <div class="action-btn" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v12m-4-4l4 4 4-4"/><path d="M4 16v4h16v-4"/></svg>导出项目</div>
+        <div class="action-btn" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>返回模板库</div>
+    </div>
+
+    <!-- 智能助手悬浮球 -->
+    <div class="ai-assistant" id="aiAssistant">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="ai-core-glow"><feGaussianBlur stdDeviation="7.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+                <filter id="ai-particle-glow"><feGaussianBlur stdDeviation="2" /></filter>
+                <linearGradient id="ai-orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.2" />
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="15" fill="#a855f7" filter="url(#ai-core-glow)" class="ai-pulse-glow" />
+            <g class="ai-orbit-1">
+                <ellipse cx="60" cy="60" rx="45" ry="15" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(30 60 60)" />
+                <ellipse cx="60" cy="60" rx="55" ry="12" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(90 60 60)" opacity="0.7" />
+            </g>
+            <g class="ai-orbit-2">
+                <ellipse cx="60" cy="60" rx="50" ry="18" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1.5" transform="rotate(150 60 60)" />
+                <ellipse cx="60" cy="60" rx="40" ry="25" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(210 60 60)" opacity="0.6" />
+            </g>
+            <g class="ai-orbit-3">
+                <ellipse cx="60" cy="60" rx="58" ry="10" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1" transform="rotate(60 60 60)" opacity="0.9" />
+                <ellipse cx="60" cy="60" rx="35" ry="30" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(120 60 60)" opacity="0.5" />
+            </g>
+            <path d="M60,60 L60,10" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-1" />
+            <path d="M60,60 L103,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-2" />
+            <path d="M60,60 L17,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-3" />
+            <g class="ai-orbit-1"><circle cx="60" cy="10" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="60" cy="10" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-2"><circle cx="103" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="103" cy="85" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-3"><circle cx="17" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="17" cy="85" r="1.5" fill="#fff" /></g>
+        </svg>
+        <div class="ai-assistant-tooltip">AI 设计助手</div>
+    </div>
+
+    <script>
+        (function() {
+            const svg = document.getElementById('linesSvg');
+            if (!svg) return;
+            const container = document.querySelector('.graph-container');
+            if (!container) return;
+            
+            const getPos = (id) => {
+                const el = document.getElementById(id);
+                if (!el) return null;
+                const rect = el.getBoundingClientRect();
+                const cr = container.getBoundingClientRect();
+                return { right: rect.right - cr.left, left: rect.left - cr.left, centerY: (rect.top + rect.bottom)/2 - cr.top };
+            };
+            
+            const ids = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10','n11','n12','n13','n14','n15'];
+            const pos = {};
+            for (let id of ids) { let p = getPos(id); if (p) pos[id] = p; }
+            
+            const connections = [
+                { from: 'n1', to: 'n5', dy: -25 }, { from: 'n2', to: 'n5', dy: 0 }, { from: 'n3', to: 'n5', dy: 20 }, { from: 'n4', to: 'n5', dy: 40 },
+                { from: 'n5', to: 'n6', dy: 0 }, { from: 'n6', to: 'n7', dy: 0 },
+                { from: 'n7', to: 'n8', dy: -40 }, { from: 'n7', to: 'n9', dy: -15 }, { from: 'n7', to: 'n10', dy: 10 }, { from: 'n7', to: 'n11', dy: 35 },
+                { from: 'n8', to: 'n12', dy: -45 }, { from: 'n9', to: 'n12', dy: -20 }, { from: 'n10', to: 'n12', dy: 5 }, { from: 'n11', to: 'n12', dy: 30 },
+                { from: 'n12', to: 'n13', dy: 0 }, { from: 'n13', to: 'n14', dy: 0 }, { from: 'n14', to: 'n15', dy: 0 }
+            ];
+            
+            const defs = `<defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#06b6d4"/><stop offset="50%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ec4899"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2.5"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+            let paths = defs;
+            
+            for (let conn of connections) {
+                let fromPos = pos[conn.from], toPos = pos[conn.to];
+                if (!fromPos || !toPos) continue;
+                let x1 = fromPos.right + 6, x2 = toPos.left - 8;
+                let y1 = fromPos.centerY, y2 = toPos.centerY + (conn.dy || 0);
+                let dx = x2 - x1;
+                let cx1 = x1 + dx * 0.5, cy1 = y1;
+                let cx2 = x2 - dx * 0.3, cy2 = y2;
+                paths += `<path d="M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}" stroke="url(#lg)" stroke-width="2" fill="none" filter="url(#glow)"/>`;
+            }
+            svg.innerHTML = paths;
+        })();
+        
+        // 节点选中高亮
+        let currentSelectedCard = null;
+        function selectNode(card) {
+            if(currentSelectedCard) currentSelectedCard.classList.remove('selected-node');
+            card.classList.add('selected-node');
+            currentSelectedCard = card;
+            const titleElem = card.querySelector('.node-title')?.innerText || '节点';
+            const nodeId = card.id;
+            let phase = '设计阶段';
+            if (nodeId === 'n1' || nodeId === 'n2' || nodeId === 'n3' || nodeId === 'n4') phase = '发现阶段';
+            else if (nodeId === 'n5' || nodeId === 'n6' || nodeId === 'n7') phase = '定义阶段';
+            else if (nodeId === 'n8' || nodeId === 'n9' || nodeId === 'n10' || nodeId === 'n11') phase = '发展阶段';
+            else if (nodeId === 'n12' || nodeId === 'n13' || nodeId === 'n14' || nodeId === 'n15') phase = '交付阶段';
+            document.getElementById('inspectorType').innerText = titleElem;
+            document.getElementById('inspectorId').innerText = nodeId.toUpperCase();
+            document.getElementById('inspectorPhase').innerText = phase;
+        }
+        
+        // 缩放功能
+        let currentZoom = 100;
+        const nodesWrapper = document.getElementById('nodesWrapper');
+        function applyZoom() {
+            const scale = currentZoom / 100;
+            nodesWrapper.style.transform = `scale(${scale})`;
+            nodesWrapper.style.transformOrigin = '0 0';
+            setTimeout(() => location.reload(), 60);
+        }
+        
+        window.addEventListener('load', () => { 
+            setTimeout(() => { if(document.getElementById('n12')) selectNode(document.getElementById('n12')); }, 300);
+        });
+        
+        document.querySelectorAll('.node-card').forEach(card => {
+            card.addEventListener('click', (e) => { e.stopPropagation(); selectNode(card); });
+        });
+        
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.category-item').forEach(x => x.classList.remove('active'));
+                this.classList.add('active');
+                alert(`📁 切换到分类: ${this.innerText}`);
+            });
+        });
+        
+        // 缩放按钮
+        document.getElementById('zoomInBtn')?.addEventListener('click', () => { if(currentZoom < 150) { currentZoom += 10; applyZoom(); } });
+        document.getElementById('zoomOutBtn')?.addEventListener('click', () => { if(currentZoom > 60) { currentZoom -= 10; applyZoom(); } });
+        
+        // 跳转按钮
+        document.getElementById('backBtn').addEventListener('click', () => { window.location.href = 'templates.html'; });
+        document.getElementById('backToTemplates').addEventListener('click', () => { window.location.href = 'templates.html'; });
+        document.getElementById('versionBtn').addEventListener('click', () => { window.location.href = 'version-history.html'; });
+        document.getElementById('versionHistoryBtn').addEventListener('click', () => { window.location.href = 'version-history.html'; });
+        document.getElementById('exportBtn').addEventListener('click', () => { window.location.href = 'export.html'; });
+        document.getElementById('exportPageBtn').addEventListener('click', () => { window.location.href = 'export.html'; });
+        document.getElementById('exportBtnTop').addEventListener('click', () => { window.location.href = 'export.html'; });
+        document.getElementById('shareBtn').addEventListener('click', () => { alert('📎 分享链接已复制 (双钻模型高级模板)'); });
+        
+        document.querySelector('.create-project-btn').addEventListener('click', () => { alert('🚀 创建新项目: 基于双钻模型高级模板'); });
+        document.querySelector('.upgrade-btn').addEventListener('click', () => { alert('⚡ 升级专业版解锁更多企业级功能'); });
+        document.querySelectorAll('.recent-item').forEach(item => {
+            item.addEventListener('click', () => { alert(`打开最近项目: ${item.innerText}`); });
+        });
+        
+        document.getElementById('aiAssistant').addEventListener('click', () => {
+            alert('✨ AI设计助手\n\n我可以帮你：\n• 深度理解双钻模型各阶段\n• 推荐高级研究方法\n• 生成系统化解决方案\n• 优化企业级设计交付');
+        });
+    </script>
+</body>
+</html>

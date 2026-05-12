@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DesignScope - 登录</title>
+    <script src="https://static.mastergo.com/static/ai/resource/html/tailwind/index.global.js"></script>
+    
+    <style type="text/tailwindcss">
+        @theme {
+            --color-space-900: #050505;
+            --color-brand-deep: #2e1065;
+            --color-brand-bright: #a855f7;
+            --color-brand-light: #d8b4fe;
+            --color-card-bg: #ffffff;
+            --color-input-bg: #f8fafc;
+            --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+            --ease-in-out-circ: cubic-bezier(0.85, 0, 0.15, 1);
+            --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+        @keyframes orbit {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; filter: blur(30px); }
+            50% { opacity: 0.8; filter: blur(40px); }
+        }
+
+        .animate-float { animation: float-slow 8s var(--ease-in-out-circ) infinite; }
+        .animate-orbit-1 { animation: orbit 24s linear infinite; transform-origin: center; }
+        .animate-orbit-2 { animation: orbit 32s linear infinite reverse; transform-origin: center; }
+        .animate-orbit-3 { animation: orbit 40s linear infinite; transform-origin: center; }
+        .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: var(--color-brand-bright); color: white; }
+        body { overflow: hidden; }
+    </style>
+</head>
+<body class="bg-space-900 text-slate-800 font-sans h-screen w-screen relative flex items-center justify-center">
+    
+    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-brand-deep/30 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-tl from-brand-bright/15 to-transparent"></div>
+        <div class="absolute top-[-20%] left-[-10%] w-[120%] h-[120%] bg-[radial-gradient(circle_at_30%_30%,_rgba(168,85,247,0.1)_0%,_transparent_50%)]"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-[40px] bg-gradient-to-b from-brand-deep to-transparent blur-[15px] opacity-60"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-[20px] bg-gradient-to-t from-brand-bright to-transparent blur-[10px] opacity-40"></div>
+        <div class="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] flex justify-center items-center opacity-70">
+            <div class="absolute w-[400px] h-[120px] bg-brand-deep/10 rounded-[100%] blur-[50px]"></div>
+            <div class="absolute w-[300px] h-[80px] bg-brand-light/5 rounded-[100%] blur-[40px]"></div>
+        </div>
+        <div class="absolute top-[-20px] left-1/2 -translate-x-1/2 w-[1000px] h-[40px] bg-gradient-to-r from-transparent via-brand-bright/15 to-transparent blur-[20px] rounded-[100%]"></div>
+        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="ray-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#a855f7" stop-opacity="0.4" />
+                    <stop offset="100%" stop-color="#2e1065" stop-opacity="0.1" />
+                </linearGradient>
+                <linearGradient id="ray-grad-2" x1="100%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="#d8b4fe" stop-opacity="0" />
+                </linearGradient>
+                <filter id="blur-light" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" />
+                </filter>
+            </defs>
+            <path d="M-100,-100 Q 400,200 1200,1080" fill="none" stroke="url(#ray-grad-1)" stroke-width="8" filter="url(#blur-light)" />
+            <path d="M0,0 Q 600,400 1500,1080" fill="none" stroke="url(#ray-grad-1)" stroke-width="4" />
+            <path d="M100,-50 Q 800,300 1920,900" fill="none" stroke="url(#ray-grad-1)" stroke-width="2" filter="url(#blur-light)" />
+            <path d="M-50,200 Q 500,600 1000,1200" fill="none" stroke="url(#ray-grad-1)" stroke-width="6" />
+            <path d="M1920,1080 Q 1400,700 800,0" fill="none" stroke="url(#ray-grad-2)" stroke-width="3" />
+            <path d="M1700,1200 Q 1200,500 500,-100" fill="none" stroke="url(#ray-grad-2)" stroke-width="1" />
+            <path d="M2100,800 Q 1600,400 1000,-50" fill="none" stroke="url(#ray-grad-2)" stroke-width="2" filter="url(#blur-light)" />
+            <circle cx="15%" cy="25%" r="1.5" fill="#a855f7" opacity="0.6"/>
+            <circle cx="85%" cy="15%" r="1" fill="#d8b4fe" opacity="0.4"/>
+            <circle cx="70%" cy="80%" r="2" fill="#a855f7" opacity="0.5"/>
+            <circle cx="25%" cy="75%" r="1" fill="#d8b4fe" opacity="0.7"/>
+            <circle cx="50%" cy="10%" r="1.5" fill="#a855f7" opacity="0.3"/>
+            <circle cx="90%" cy="60%" r="1" fill="#d8b4fe" opacity="0.8"/>
+        </svg>
+    </div>
+
+    <main class="relative z-10 w-[500px] bg-card-bg rounded-[32px] p-[40px] shadow-[0_0_56px_rgba(168,85,247,0.15)] ring-1 ring-black/5 animate-float flex flex-col">
+        <div class="absolute top-[20%] right-[-4px] w-[8px] h-[8px] bg-brand-bright rounded-full opacity-60 blur-[1px]"></div>
+        <div class="absolute bottom-[15%] left-[-3px] w-[6px] h-[6px] bg-brand-light rounded-full opacity-40 blur-[1px]"></div>
+
+        <header class="flex flex-col items-center mb-10 relative">
+            <div class="w-[64px] h-[64px] rounded-full bg-gradient-to-br from-brand-deep to-brand-bright flex items-center justify-center relative z-10 shadow-lg">
+                <div class="absolute inset-0 rounded-full ring-4 ring-brand-light/30 blur-[4px] -z-10"></div>
+                <span class="text-white text-[28px] font-bold leading-none tracking-tighter">D</span>
+            </div>
+            <h1 class="mt-[12px] text-[26px] font-bold text-slate-900 tracking-tight">DesignScope</h1>
+            <p class="mt-[6px] text-[14px] text-slate-400 text-center font-medium">让设计过程可见可溯可协同</p>
+        </header>
+
+        <form class="flex flex-col" onsubmit="event.preventDefault(); handleLogin();">
+            <h2 class="text-[22px] font-bold text-slate-800 mb-[20px] tracking-tight">登录</h2>
+            <div class="relative mb-[12px] group">
+                <input type="text" id="emailInput" placeholder="请输入邮箱或手机号" 
+                       class="w-full h-[52px] rounded-[16px] bg-input-bg px-[16px] text-[14px] text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-300 focus:bg-white focus:ring-2 focus:ring-brand-bright/50">
+            </div>
+            <div class="relative mb-[8px] group">
+                <input type="password" id="passwordInput" placeholder="请输入密码" 
+                       class="w-full h-[52px] rounded-[16px] bg-input-bg px-[16px] text-[14px] text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-300 focus:bg-white focus:ring-2 focus:ring-brand-bright/50">
+            </div>
+            <div class="flex justify-end mb-[20px]">
+                <a href="#" class="text-[12px] text-slate-400 hover:text-brand-bright transition-colors">忘记密码？</a>
+            </div>
+            <button type="submit" class="w-full h-[52px] rounded-[16px] bg-gradient-to-r from-brand-deep to-brand-bright text-white text-[16px] font-bold tracking-wide transition-all duration-300 hover:shadow-[0_8px_24px_rgba(168,85,247,0.3)] hover:-translate-y-0.5">
+                登录
+            </button>
+        </form>
+
+        <div class="flex items-center justify-center mt-[20px] mb-[20px]">
+            <div class="w-[170px] h-[1px] bg-slate-100"></div>
+            <span class="px-4 text-[12px] text-slate-400">或</span>
+            <div class="w-[170px] h-[1px] bg-slate-100"></div>
+        </div>
+
+        <div class="flex justify-center gap-[24px] mb-[32px]">
+            <button class="w-[48px] h-[48px] rounded-full bg-input-bg flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-[#07C160] transition-all">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8.5,13.5 C7.1,13.5 6,12.4 6,11 C6,9.6 7.1,8.5 8.5,8.5 C9.9,8.5 11,9.6 11,11 C11,12.4 9.9,13.5 8.5,13.5 Z M15.5,13.5 C14.1,13.5 13,12.4 13,11 C13,9.6 14.1,8.5 15.5,8.5 C16.9,8.5 18,9.6 18,11 C18,12.4 16.9,13.5 15.5,13.5 Z M12,3 C6.5,3 2,6.6 2,11 C2,13.5 3.4,15.7 5.5,17.1 L4.5,20 L7.5,18.5 C8.9,18.8 10.4,19 12,19 C17.5,19 22,15.4 22,11 C22,6.6 17.5,3 12,3 Z"/></svg>
+            </button>
+            <button class="w-[48px] h-[48px] rounded-full bg-input-bg flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-[#181717] transition-all">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+            </button>
+        </div>
+
+        <div class="mt-auto text-center">
+            <span class="text-[14px] text-slate-500">没有账号？</span>
+            <a href="#" class="text-[14px] font-bold text-brand-deep hover:text-brand-bright transition-colors">注册</a>
+        </div>
+    </main>
+
+    <div class="fixed bottom-[100px] right-[80px] w-[120px] h-[120px] z-20 pointer-events-none flex items-center justify-center">
+        <div class="absolute inset-0 bg-brand-light rounded-full opacity-25 blur-[30px] animate-pulse-glow"></div>
+        <svg class="w-full h-full relative z-10 overflow-visible" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="core-glow"><feGaussianBlur stdDeviation="7.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+                <filter id="particle-glow"><feGaussianBlur stdDeviation="2" /></filter>
+                <linearGradient id="orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.2" />
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="15" fill="#a855f7" filter="url(#core-glow)" class="animate-pulse-glow" />
+            <g class="animate-orbit-1">
+                <ellipse cx="60" cy="60" rx="45" ry="15" fill="none" stroke="url(#orbit-grad)" stroke-width="2" transform="rotate(30 60 60)" />
+                <ellipse cx="60" cy="60" rx="55" ry="12" fill="none" stroke="url(#orbit-grad)" stroke-width="2" transform="rotate(90 60 60)" opacity="0.7" />
+            </g>
+            <g class="animate-orbit-2">
+                <ellipse cx="60" cy="60" rx="50" ry="18" fill="none" stroke="url(#orbit-grad)" stroke-width="1.5" transform="rotate(150 60 60)" />
+                <ellipse cx="60" cy="60" rx="40" ry="25" fill="none" stroke="url(#orbit-grad)" stroke-width="2" transform="rotate(210 60 60)" opacity="0.6" />
+            </g>
+            <g class="animate-orbit-3">
+                <ellipse cx="60" cy="60" rx="58" ry="10" fill="none" stroke="url(#orbit-grad)" stroke-width="1" transform="rotate(60 60 60)" opacity="0.9" />
+                <ellipse cx="60" cy="60" rx="35" ry="30" fill="none" stroke="url(#orbit-grad)" stroke-width="2" transform="rotate(120 60 60)" opacity="0.5" />
+            </g>
+            <path d="M60,60 L60,10" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="animate-orbit-1" />
+            <path d="M60,60 L103,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="animate-orbit-2" />
+            <path d="M60,60 L17,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="animate-orbit-3" />
+            <g class="animate-orbit-1"><circle cx="60" cy="10" r="2" fill="#a855f7" filter="url(#particle-glow)" /><circle cx="60" cy="10" r="2" fill="#fff" /></g>
+            <g class="animate-orbit-2"><circle cx="103" cy="85" r="2" fill="#a855f7" filter="url(#particle-glow)" /><circle cx="103" cy="85" r="2" fill="#fff" /></g>
+            <g class="animate-orbit-3"><circle cx="17" cy="85" r="2" fill="#a855f7" filter="url(#particle-glow)" /><circle cx="17" cy="85" r="2" fill="#fff" /></g>
+        </svg>
+    </div>
+
+    <script>
+        function handleLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            if (!email || !password) {
+                alert('请输入邮箱和密码');
+                return;
+            }
+            window.location.href = 'create.html';
+        }
+    </script>
+</body>
+</html>

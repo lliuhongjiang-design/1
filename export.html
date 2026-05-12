@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DesignScope - 导出项目</title>
+    <script src="https://static.mastergo.com/static/ai/resource/html/tailwind/index.global.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        .bg-layer { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 80%, #1a0b2e 0%, #050505 100%); z-index: 0; }
+        .glow-spot { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+        .glow-1 { width: 600px; height: 600px; background: #8b5cf6; bottom: -200px; left: -100px; }
+        .glow-2 { width: 500px; height: 500px; background: #06b6d4; top: -100px; right: -100px; opacity: 0.3; }
+        .glow-3 { width: 400px; height: 400px; background: #ec4899; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; }
+        
+        .app-container { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; background: rgba(10, 10, 20, 0.3); }
+        
+        .top-navbar {
+            height: 64px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 24px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; }
+        .logo-text { font-size: 18px; font-weight: 600; color: white; }
+        .page-title { font-size: 16px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; }
+        
+        .back-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(139, 92, 246, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #a78bfa;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(139, 92, 246, 0.35); transform: translateX(-4px); }
+        
+        @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes reverse-orbit { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; filter: blur(25px); } 50% { opacity: 0.8; filter: blur(35px); } }
+        .ai-orbit-1 { animation: orbit 20s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-2 { animation: reverse-orbit 25s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-3 { animation: orbit 30s linear infinite; transform-origin: 60px 60px; }
+        .ai-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        
+        .main-layout { flex: 1; display: flex; overflow: hidden; gap: 1px; padding: 24px; }
+        
+        .export-options {
+            width: 340px;
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            margin-right: 24px;
+            overflow-y: auto;
+        }
+        .option-section { margin-bottom: 28px; }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title svg { width: 18px; height: 18px; stroke: #a78bfa; }
+        .radio-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+        .radio-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .radio-item input { width: 16px; height: 16px; accent-color: #8b5cf6; cursor: pointer; }
+        .radio-item label { font-size: 13px; color: rgba(255, 255, 255, 0.7); cursor: pointer; }
+        .radio-desc { font-size: 10px; color: rgba(255, 255, 255, 0.35); margin-left: 26px; }
+        .format-buttons { display: flex; gap: 12px; margin-top: 8px; }
+        .format-btn {
+            flex: 1; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px; padding: 8px; text-align: center; font-size: 12px;
+            color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s;
+        }
+        .format-btn.active { background: linear-gradient(135deg, #7c3aed, #a855f7); border-color: transparent; color: white; }
+        
+        .checkbox-group { display: flex; flex-direction: column; gap: 12px; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .checkbox-item input { width: 16px; height: 16px; accent-color: #8b5cf6; }
+        .checkbox-item label { font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+        
+        .generate-btn {
+            margin-top: 20px; background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: none; border-radius: 28px; padding: 14px; color: white;
+            font-size: 14px; font-weight: 600; cursor: pointer; width: 100%;
+        }
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4); }
+        
+        .coexport-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(139, 92, 246, 0.15); }
+        .coexport-title { font-size: 13px; font-weight: 600; color: white; margin-bottom: 12px; }
+        .coexport-grid { display: flex; gap: 12px; }
+        .coexport-card {
+            flex: 1; background: rgba(25, 20, 40, 0.6); border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 16px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;
+        }
+        .coexport-card:hover { border-color: rgba(139, 92, 246, 0.5); transform: translateY(-2px); }
+        .coexport-card svg { width: 32px; height: 32px; margin-bottom: 8px; stroke: #a78bfa; }
+        .coexport-card .card-title { font-size: 12px; font-weight: 500; color: white; margin-bottom: 4px; }
+        .coexport-card .card-desc { font-size: 9px; color: rgba(255, 255, 255, 0.4); }
+        
+        .history-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(139, 92, 246, 0.15); }
+        .history-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .history-title { font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.6); }
+        .history-clear { font-size: 11px; color: #a78bfa; cursor: pointer; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-item {
+            background: rgba(25, 20, 40, 0.4); border-radius: 12px; padding: 10px;
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+        }
+        .history-item:hover { background: rgba(35, 28, 55, 0.6); }
+        .history-icon { width: 28px; height: 28px; background: rgba(139, 92, 246, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .history-info { flex: 1; }
+        .history-name { font-size: 12px; color: white; }
+        .history-time { font-size: 9px; color: rgba(255, 255, 255, 0.3); }
+        .history-download { width: 28px; height: 28px; background: rgba(139, 92, 246, 0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+        
+        .preview-area {
+            flex: 1;
+            background: rgba(10, 10, 20, 0.4);
+            border-radius: 24px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .preview-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-title { font-size: 14px; font-weight: 600; color: white; }
+        .preview-badge { font-size: 11px; color: #a78bfa; background: rgba(139, 92, 246, 0.15); padding: 4px 10px; border-radius: 20px; }
+        
+        .preview-canvas {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.2);
+            margin: 16px;
+            border-radius: 20px;
+            overflow: auto;
+        }
+        .preview-svg {
+            width: 100%;
+            max-width: 850px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.04));
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(139,92,246,0.15);
+        }
+        .file-info {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(139, 92, 246, 0.15);
+            display: flex;
+            gap: 24px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            flex-wrap: wrap;
+        }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 4px; }
+        
+        .ai-assistant {
+            position: fixed;
+            bottom: 80px;
+            right: 80px;
+            width: 110px;
+            height: 110px;
+            z-index: 200;
+            cursor: pointer;
+        }
+        .ai-assistant svg { width: 100%; height: 100%; overflow: visible; }
+        .ai-assistant-tooltip {
+            position: absolute;
+            right: 120px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .ai-assistant:hover .ai-assistant-tooltip { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"><div class="glow-spot glow-1"></div><div class="glow-spot glow-2"></div><div class="glow-spot glow-3"></div></div>
+    
+    <div class="app-container">
+        <header class="top-navbar">
+            <div class="nav-left" id="backToCanvas">
+                <div class="logo-icon">D</div>
+                <span class="logo-text">DesignScope</span>
+            </div>
+            <div class="page-title">导出项目 · 成果交付</div>
+            <div class="nav-right"><div class="user-avatar"></div></div>
+        </header>
+        
+        <div class="main-layout">
+            <div class="export-options">
+                <div class="option-section">
+                    <div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>导出范围</div>
+                    <div class="radio-group">
+                        <div class="radio-item"><input type="radio" name="scope" id="scopeCurrent" checked><label for="scopeCurrent">当前视图</label></div>
+                        <div class="radio-desc">导出当前画布可见区域</div>
+                        <div class="radio-item"><input type="radio" name="scope" id="scopeAll"><label for="scopeAll">全部画布</label></div>
+                        <div class="radio-desc">导出整个设计图谱所有节点</div>
+                        <div class="radio-item"><input type="radio" name="scope" id="scopeSelected"><label for="scopeSelected">选中区域</label></div>
+                        <div class="radio-desc">仅导出当前框选范围内的节点</div>
+                    </div>
+                </div>
+                
+                <div class="option-section">
+                    <div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 15h4l2-7 3 9 3-5 2 3h4"/></svg>图片格式</div>
+                    <div class="format-buttons">
+                        <div class="format-btn active" data-format="png">PNG</div>
+                        <div class="format-btn" data-format="jpg">JPG</div>
+                        <div class="format-btn" data-format="svg">SVG</div>
+                    </div>
+                </div>
+                
+                <div class="option-section">
+                    <div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v16h16V4H4z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="12" y2="13"/></svg>PDF 包含内容</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item"><input type="checkbox" id="includeNodes" checked><label for="includeNodes">节点详情</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="includeDecisions" checked><label for="includeDecisions">决策记录</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="includeVersionTree" checked><label for="includeVersionTree">版本树</label></div>
+                    </div>
+                </div>
+                
+                <button class="generate-btn" id="generateBtn">📄 生成 PDF 报告</button>
+                
+                <div class="coexport-section">
+                    <div class="coexport-title">🔗 协同导出</div>
+                    <div class="coexport-grid">
+                        <div class="coexport-card" id="exportMasterGo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/></svg><div class="card-title">MasterGo</div><div class="card-desc">同步设计文件</div></div>
+                        <div class="coexport-card" id="exportFigma"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M6 2v20M2 6h20M2 12h20M2 18h20"/></svg><div class="card-title">Figma</div><div class="card-desc">跨平台互通</div></div>
+                        <div class="coexport-card" id="exportCode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><div class="card-title">代码生成</div><div class="card-desc">CSS / React</div></div>
+                    </div>
+                </div>
+                
+                <div class="history-section">
+                    <div class="history-header"><div class="history-title">📁 历史导出记录</div><div class="history-clear" id="clearHistory">清空记录</div></div>
+                    <div class="history-list" id="historyList">
+                        <div class="history-item"><div class="history-icon">📄</div><div class="history-info"><div class="history-name">设计图谱_20250425</div><div class="history-time">2025-04-25 14:30</div></div><div class="history-download">↓</div></div>
+                        <div class="history-item"><div class="history-icon">📊</div><div class="history-info"><div class="history-name">版本树快照</div><div class="history-time">2025-04-24 10:15</div></div><div class="history-download">↓</div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-area">
+                <div class="preview-header">
+                    <div class="preview-title">📸 导出预览 | 设计图谱实时预览</div>
+                    <div class="preview-badge">实时更新</div>
+                </div>
+                <div class="preview-canvas">
+                    <svg class="preview-svg" viewBox="0 0 850 520" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="nodeGrad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#c084fc"/></linearGradient>
+                            <linearGradient id="nodeGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#22d3ee"/></linearGradient>
+                            <linearGradient id="nodeGrad3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ec4899"/><stop offset="100%" stop-color="#f472b6"/></linearGradient>
+                            <linearGradient id="nodeGrad4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#34d399"/></linearGradient>
+                            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient>
+                            <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                            <filter id="shadow"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.4)"/></filter>
+                        </defs>
+                        
+                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(139,92,246,0.08)" stroke-width="0.5"/>
+                            <circle cx="0" cy="0" r="1.5" fill="rgba(139,92,246,0.15)"/>
+                        </pattern>
+                        <rect width="850" height="520" fill="url(#grid)" rx="16"/>
+                        <circle cx="425" cy="260" r="200" fill="rgba(139,92,246,0.04)" filter="url(#glow)"/>
+                        
+                        <!-- 节点1 - 用户画像 -->
+                        <g class="node-group">
+                            <rect x="30" y="190" width="150" height="115" rx="12" fill="rgba(20,15,40,0.92)" stroke="url(#nodeGrad1)" stroke-width="2" filter="url(#shadow)"/>
+                            <!-- 图标圆形和文字分离，精确定位 -->
+                            <circle cx="55" cy="220" r="14" fill="url(#nodeGrad1)"/>
+                            <text x="55" y="225" fill="white" font-size="14" text-anchor="middle" dominant-baseline="middle">👤</text>
+                            <text x="78" y="224" fill="white" font-size="12" font-weight="600">用户画像</text>
+                            <text x="45" y="250" fill="rgba(255,255,255,0.6)" font-size="10">小北 · 28岁 · 设计师</text>
+                            <text x="45" y="267" fill="rgba(255,255,255,0.45)" font-size="9">独居 · 经常忘记喝水</text>
+                            <text x="45" y="284" fill="rgba(255,255,255,0.35)" font-size="9">需要不打扰的提醒</text>
+                            <rect x="45" y="295" width="30" height="14" rx="4" fill="rgba(139,92,246,0.2)"/><text x="60" y="305" fill="#a78bfa" font-size="8" text-anchor="middle">目标</text>
+                            <rect x="80" y="295" width="30" height="14" rx="4" fill="rgba(139,92,246,0.15)"/><text x="95" y="305" fill="#c084fc" font-size="8" text-anchor="middle">核心</text>
+                        </g>
+                        
+                        <!-- 节点2 - 核心痛点 -->
+                        <g class="node-group">
+                            <rect x="30" y="330" width="150" height="115" rx="12" fill="rgba(20,15,40,0.92)" stroke="url(#nodeGrad2)" stroke-width="2" filter="url(#shadow)"/>
+                            <circle cx="55" cy="360" r="14" fill="url(#nodeGrad2)"/>
+                            <text x="55" y="365" fill="white" font-size="14" text-anchor="middle" dominant-baseline="middle">⚠️</text>
+                            <text x="78" y="364" fill="white" font-size="12" font-weight="600">核心痛点</text>
+                            <text x="45" y="390" fill="rgba(255,255,255,0.6)" font-size="10">偏头痛 · 忘记喝水</text>
+                            <text x="45" y="407" fill="rgba(255,255,255,0.45)" font-size="9">手机提醒被划掉</text>
+                            <text x="45" y="424" fill="rgba(255,255,255,0.35)" font-size="9">缺乏喝水动力</text>
+                            <rect x="45" y="435" width="30" height="14" rx="4" fill="rgba(6,182,212,0.2)"/><text x="60" y="445" fill="#22d3ee" font-size="8" text-anchor="middle">高频</text>
+                        </g>
+                        
+                        <!-- 节点3 - 问题定义 -->
+                        <g class="node-group">
+                            <rect x="250" y="255" width="170" height="125" rx="12" fill="rgba(20,15,40,0.92)" stroke="url(#nodeGrad3)" stroke-width="2" filter="url(#shadow)"/>
+                            <circle cx="285" cy="288" r="14" fill="url(#nodeGrad3)"/>
+                            <text x="285" y="293" fill="white" font-size="14" text-anchor="middle" dominant-baseline="middle">🎯</text>
+                            <text x="308" y="292" fill="white" font-size="12" font-weight="600">问题定义</text>
+                            <text x="265" y="318" fill="rgba(255,255,255,0.6)" font-size="10">如何无感提醒用户喝水</text>
+                            <text x="265" y="337" fill="rgba(255,255,255,0.45)" font-size="9">自然融入日常的智能水杯</text>
+                            <text x="265" y="354" fill="rgba(255,255,255,0.35)" font-size="9">不打扰 · 可视化 · 省心</text>
+                            <rect x="265" y="365" width="35" height="14" rx="4" fill="rgba(236,72,153,0.2)"/><text x="282" y="375" fill="#f472b6" font-size="8" text-anchor="middle">P0</text>
+                            <rect x="305" y="365" width="35" height="14" rx="4" fill="rgba(236,72,153,0.15)"/><text x="322" y="375" fill="#f472b6" font-size="8" text-anchor="middle">P1</text>
+                        </g>
+                        
+                        <!-- 节点4 - 解决方案A -->
+                        <g class="node-group">
+                            <rect x="500" y="165" width="150" height="115" rx="12" fill="rgba(20,15,40,0.92)" stroke="url(#nodeGrad4)" stroke-width="2" filter="url(#shadow)"/>
+                            <circle cx="525" cy="195" r="14" fill="url(#nodeGrad4)"/>
+                            <text x="525" y="200" fill="white" font-size="14" text-anchor="middle" dominant-baseline="middle">💡</text>
+                            <text x="548" y="199" fill="white" font-size="12" font-weight="600">方案A</text>
+                            <text x="515" y="225" fill="rgba(255,255,255,0.6)" font-size="10">灯光提醒水杯</text>
+                            <text x="515" y="242" fill="rgba(255,255,255,0.45)" font-size="9">LED灯环渐变提醒</text>
+                            <text x="515" y="259" fill="rgba(255,255,255,0.35)" font-size="9">视觉柔和 · 不打扰</text>
+                            <rect x="515" y="270" width="30" height="14" rx="4" fill="rgba(16,185,129,0.2)"/><text x="530" y="280" fill="#34d399" font-size="8" text-anchor="middle">优选</text>
+                        </g>
+                        
+                        <!-- 节点5 - 解决方案B -->
+                        <g class="node-group">
+                            <rect x="500" y="310" width="150" height="115" rx="12" fill="rgba(20,15,40,0.92)" stroke="url(#nodeGrad2)" stroke-width="2" filter="url(#shadow)"/>
+                            <circle cx="525" cy="340" r="14" fill="url(#nodeGrad2)"/>
+                            <text x="525" y="345" fill="white" font-size="14" text-anchor="middle" dominant-baseline="middle">🔔</text>
+                            <text x="548" y="344" fill="white" font-size="12" font-weight="600">方案B</text>
+                            <text x="515" y="370" fill="rgba(255,255,255,0.6)" font-size="10">震动提醒水杯</text>
+                            <text x="515" y="387" fill="rgba(255,255,255,0.45)" font-size="9">定时震动马达提醒</text>
+                            <text x="515" y="404" fill="rgba(255,255,255,0.35)" font-size="9">适合安静环境</text>
+                            <rect x="515" y="415" width="30" height="14" rx="4" fill="rgba(6,182,212,0.15)"/><text x="530" y="425" fill="#22d3ee" font-size="8" text-anchor="middle">备选</text>
+                        </g>
+                        
+                        <!-- 节点6 - 方案选择 -->
+                        <g class="node-group">
+                            <rect x="710" y="235" width="120" height="125" rx="12" fill="rgba(20,15,40,0.92)" stroke="url(#nodeGrad1)" stroke-width="2.5" filter="url(#shadow)"/>
+                            <circle cx="735" cy="268" r="15" fill="url(#nodeGrad1)"/>
+                            <circle cx="735" cy="268" r="24" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>
+                            <text x="735" y="273" fill="white" font-size="14" text-anchor="middle" dominant-baseline="middle">✓</text>
+                            <text x="758" y="272" fill="white" font-size="12" font-weight="600">方案选择</text>
+                            <text x="725" y="300" fill="rgba(255,255,255,0.5)" font-size="9">✅ 最终方案：</text>
+                            <text x="725" y="315" fill="#a78bfa" font-size="10" font-weight="600">灯光提醒水杯</text>
+                            <text x="725" y="332" fill="rgba(255,255,255,0.35)" font-size="8">不打扰·视觉直观</text>
+                            <text x="725" y="345" fill="rgba(255,255,255,0.3)" font-size="8">成本可控·易接受</text>
+                        </g>
+                        
+                        <!-- 连接线 -->
+                        <path d="M 180 255 Q 215 270 245 290" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+                        <text x="205" y="275" fill="#a78bfa" font-size="9" font-weight="500">解决</text>
+                        
+                        <path d="M 180 390 Q 215 370 245 340" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+                        <text x="205" y="375" fill="#a78bfa" font-size="9" font-weight="500">归纳</text>
+                        
+                        <path d="M 420 300 Q 455 220 495 215" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+                        <text x="450" y="255" fill="#a78bfa" font-size="9" font-weight="500">方案A</text>
+                        
+                        <path d="M 420 340 Q 455 370 495 365" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+                        <text x="450" y="355" fill="#a78bfa" font-size="9" font-weight="500">方案B</text>
+                        
+                        <path d="M 650 245 Q 680 260 705 275" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+                        <text x="670" y="260" fill="#a78bfa" font-size="9" font-weight="500">候选</text>
+                        
+                        <path d="M 650 370 Q 680 350 705 325" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+                        <text x="670" y="355" fill="#a78bfa" font-size="9" font-weight="500">候选</text>
+                        
+                        <!-- 标题区域 -->
+                        <rect x="250" y="20" width="350" height="50" rx="25" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.3)" stroke-width="1"/>
+                        <text x="425" y="42" fill="white" font-size="15" font-weight="700" text-anchor="middle">📊 问题驱动设计（中级）</text>
+                        <text x="425" y="58" fill="rgba(255,255,255,0.4)" font-size="10" text-anchor="middle">共 6 个节点 · 6 条连接关系 · 3 次迭代</text>
+                        
+                        <!-- 图例 -->
+                        <rect x="50" y="480" width="750" height="30" rx="15" fill="rgba(0,0,0,0.3)"/>
+                        <circle cx="80" cy="495" r="5" fill="url(#nodeGrad1)"/><text x="95" y="499" fill="rgba(255,255,255,0.5)" font-size="9">用户节点</text>
+                        <circle cx="180" cy="495" r="5" fill="url(#nodeGrad2)"/><text x="195" y="499" fill="rgba(255,255,255,0.5)" font-size="9">痛点节点</text>
+                        <circle cx="280" cy="495" r="5" fill="url(#nodeGrad3)"/><text x="295" y="499" fill="rgba(255,255,255,0.5)" font-size="9">定义节点</text>
+                        <circle cx="380" cy="495" r="5" fill="url(#nodeGrad4)"/><text x="395" y="499" fill="rgba(255,255,255,0.5)" font-size="9">方案节点</text>
+                        <line x1="480" y1="495" x2="520" y2="495" stroke="url(#lineGrad)" stroke-width="2"/><text x="535" y="499" fill="rgba(255,255,255,0.5)" font-size="9">逻辑连接</text>
+                        <circle cx="630" cy="495" r="6" fill="none" stroke="#a78bfa" stroke-width="1.5"/><text x="650" y="499" fill="rgba(255,255,255,0.5)" font-size="9">当前版本</text>
+                        
+                        <text x="425" y="518" fill="rgba(255,255,255,0.25)" font-size="8" text-anchor="middle">⚡ 节点可编辑 | 支持非线性迭代 | 设计决策可追溯 | 版本自动管理</text>
+                    </svg>
+                </div>
+                <div class="file-info">
+                    <span>📏 分辨率: 1920×1080</span>
+                    <span>💾 文件大小: 约 3.2 MB</span>
+                    <span>🎨 色彩模式: RGB</span>
+                    <span>🔗 节点数量: 6</span>
+                    <span>📊 连接关系: 6</span>
+                    <span>🔄 迭代次数: 3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="back-btn" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+        返回项目
+    </div>
+    
+    <div class="ai-assistant" id="aiAssistant">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><filter id="ai-core-glow"><feGaussianBlur stdDeviation="7.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+            <linearGradient id="ai-orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.8" /><stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.2" /></linearGradient></defs>
+            <circle cx="60" cy="60" r="15" fill="#a855f7" filter="url(#ai-core-glow)" class="ai-pulse-glow" />
+            <g class="ai-orbit-1"><ellipse cx="60" cy="60" rx="45" ry="15" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(30 60 60)" /><ellipse cx="60" cy="60" rx="55" ry="12" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(90 60 60)" opacity="0.7" /></g>
+            <g class="ai-orbit-2"><ellipse cx="60" cy="60" rx="50" ry="18" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1.5" transform="rotate(150 60 60)" /><ellipse cx="60" cy="60" rx="40" ry="25" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(210 60 60)" opacity="0.6" /></g>
+            <g class="ai-orbit-3"><ellipse cx="60" cy="60" rx="58" ry="10" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1" transform="rotate(60 60 60)" opacity="0.9" /><ellipse cx="60" cy="60" rx="35" ry="30" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(120 60 60)" opacity="0.5" /></g>
+            <path d="M60,60 L60,10" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-1" />
+            <path d="M60,60 L103,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-2" />
+            <path d="M60,60 L17,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-3" />
+            <g class="ai-orbit-1"><circle cx="60" cy="10" r="2" fill="#a855f7" /><circle cx="60" cy="10" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-2"><circle cx="103" cy="85" r="2" fill="#a855f7" /><circle cx="103" cy="85" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-3"><circle cx="17" cy="85" r="2" fill="#a855f7" /><circle cx="17" cy="85" r="1.5" fill="#fff" /></g>
+        </svg>
+        <div class="ai-assistant-tooltip">AI 设计助手</div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            const scope = document.querySelector('input[name="scope"]:checked').id;
+            const format = document.querySelector('.format-btn.active').textContent;
+            alert(`✅ 已生成 ${format} 格式报告\n导出范围: ${scope === 'scopeCurrent' ? '当前视图' : scope === 'scopeAll' ? '全部画布' : '选中区域'}\n文件已保存至下载文件夹`);
+        });
+        
+        document.getElementById('exportMasterGo').addEventListener('click', () => alert('🚀 正在导出到 MasterGo...'));
+        document.getElementById('exportFigma').addEventListener('click', () => alert('🎨 正在同步到 Figma...'));
+        document.getElementById('exportCode').addEventListener('click', () => alert('💻 正在生成代码...\nCSS + React 组件已准备就绪'));
+        
+        document.getElementById('clearHistory').addEventListener('click', () => {
+            document.getElementById('historyList').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);">暂无导出记录</div>';
+        });
+        
+        document.getElementById('backBtn').onclick = () => window.location.href = 'template-problem-intermediate.html';
+        document.getElementById('backToCanvas').onclick = () => window.location.href = 'template-problem-intermediate.html';
+        document.getElementById('aiAssistant').onclick = () => alert('✨ AI设计助手\n\n我可以帮你：\n• 优化导出设置\n• 推荐最佳格式\n• 快速分享项目');
+    </script>
+</body>
+</html>

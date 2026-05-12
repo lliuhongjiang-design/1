@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DesignScope - 版本历史</title>
+    <script src="https://static.mastergo.com/static/ai/resource/html/tailwind/index.global.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* 背景层 */
+        .bg-layer { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 80%, #1a0b2e 0%, #050505 100%); z-index: 0; }
+        .glow-spot { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+        .glow-1 { width: 600px; height: 600px; background: #8b5cf6; bottom: -200px; left: -100px; }
+        .glow-2 { width: 500px; height: 500px; background: #06b6d4; top: -100px; right: -100px; opacity: 0.3; }
+        .glow-3 { width: 400px; height: 400px; background: #ec4899; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; }
+        
+        .app-container { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; background: rgba(10, 10, 20, 0.3); }
+        
+        /* 顶部导航栏 */
+        .top-navbar {
+            height: 64px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 24px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; }
+        .logo-text { font-size: 18px; font-weight: 600; color: white; }
+        .page-title { font-size: 16px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; }
+        
+        /* 返回按钮 */
+        .back-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(139, 92, 246, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #a78bfa;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(139, 92, 246, 0.35); transform: translateX(-4px); }
+        
+        /* 动画定义 */
+        @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes reverse-orbit { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; filter: blur(25px); } 50% { opacity: 0.8; filter: blur(35px); } }
+        @keyframes float-point { 0%, 100% { transform: translateY(0px); opacity: 0.6; } 50% { transform: translateY(-5px); opacity: 1; } }
+        @keyframes flow-light { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 20; } }
+        
+        .ai-orbit-1 { animation: orbit 20s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-2 { animation: reverse-orbit 25s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-3 { animation: orbit 30s linear infinite; transform-origin: 60px 60px; }
+        .ai-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        
+        /* 主布局 */
+        .main-layout { flex: 1; display: flex; overflow: hidden; gap: 1px; }
+        
+        /* 左侧版本列表 - 与之前保持一致 */
+        .version-list {
+            width: 360px;
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(8px);
+            border-right: 1px solid rgba(139, 92, 246, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+        }
+        .list-header {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .list-title {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+        .list-sub { font-size: 11px; color: rgba(255, 255, 255, 0.4); }
+        .version-items { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .version-item {
+            background: rgba(25, 20, 40, 0.6);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 16px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .version-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #06b6d4, #8b5cf6, #ec4899);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .version-item:hover { border-color: rgba(139, 92, 246, 0.5); background: rgba(35, 28, 55, 0.8); transform: translateX(4px); }
+        .version-item.active { border-color: #a78bfa; background: rgba(139, 92, 246, 0.15); }
+        .version-item.active::before { opacity: 1; }
+        .version-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .version-number { font-size: 15px; font-weight: 700; color: white; }
+        .version-badge { font-size: 9px; padding: 2px 10px; border-radius: 20px; }
+        .version-badge.main { background: rgba(139, 92, 246, 0.3); color: #a78bfa; }
+        .version-badge.branch { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+        .version-badge.current { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; }
+        .version-date { font-size: 10px; color: rgba(255, 255, 255, 0.4); margin-bottom: 6px; }
+        .version-author { font-size: 10px; color: rgba(255, 255, 255, 0.5); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .author-avatar { width: 18px; height: 18px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); border-radius: 50%; }
+        .version-desc { font-size: 10px; color: rgba(255, 255, 255, 0.4); margin-bottom: 10px; line-height: 1.4; }
+        .restore-btn {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 10px;
+            color: #a78bfa;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .restore-btn:hover { background: rgba(139, 92, 246, 0.3); }
+        
+        /* 右侧版本树 */
+        .version-tree {
+            flex: 1;
+            background: rgba(10, 10, 20, 0.4);
+            padding: 24px;
+            overflow: auto;
+            position: relative;
+        }
+        .tree-header {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tree-title { font-size: 16px; font-weight: 600; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tree-actions { display: flex; gap: 12px; }
+        .tree-btn {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 11px;
+            color: #a78bfa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tree-btn:hover { background: rgba(139, 92, 246, 0.3); }
+        
+        .tree-canvas {
+            position: relative;
+            min-height: 520px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            padding: 30px 20px;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            overflow: hidden;
+        }
+        /* 画布背景网格 */
+        .tree-canvas::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+        }
+        .tree-svg { width: 100%; height: 100%; min-height: 480px; position: relative; z-index: 2; }
+        
+        /* 图例 */
+        .legend {
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255, 255, 255, 0.5); }
+        .legend-line { width: 30px; height: 2px; }
+        .legend-line.solid { background: linear-gradient(90deg, #06b6d4, #8b5cf6); box-shadow: 0 0 8px #8b5cf6; }
+        .legend-line.dashed { background: repeating-linear-gradient(90deg, #a78bfa, #a78bfa 4px, transparent 4px, transparent 10px); }
+        .legend-circle { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-circle.main { background: #8b5cf6; box-shadow: 0 0 10px #8b5cf6; }
+        .legend-circle.branch { background: #c084fc; }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 4px; }
+        
+        /* 智能助手 */
+        .ai-assistant {
+            position: fixed;
+            bottom: 80px;
+            right: 80px;
+            width: 110px;
+            height: 110px;
+            z-index: 200;
+            cursor: pointer;
+        }
+        .ai-assistant svg { width: 100%; height: 100%; overflow: visible; }
+        .ai-assistant-tooltip {
+            position: absolute;
+            right: 120px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .ai-assistant:hover .ai-assistant-tooltip { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"><div class="glow-spot glow-1"></div><div class="glow-spot glow-2"></div><div class="glow-spot glow-3"></div></div>
+    
+    <div class="app-container">
+        <header class="top-navbar">
+            <div class="nav-left" id="backToCanvas">
+                <div class="logo-icon">D</div>
+                <span class="logo-text">DesignScope</span>
+            </div>
+            <div class="page-title">版本历史 · 迭代轨迹</div>
+            <div class="nav-right"><div class="user-avatar"></div></div>
+        </header>
+        
+        <div class="main-layout">
+            <div class="version-list">
+                <div class="list-header">
+                    <div class="list-title">📋 版本时间线</div>
+                    <div class="list-sub">共 <span id="versionCount">0</span> 个版本记录</div>
+                </div>
+                <div class="version-items" id="versionList"></div>
+            </div>
+            
+            <div class="version-tree">
+                <div class="tree-header">
+                    <div class="tree-title">🌳 版本演化树 · 迭代全景图</div>
+                    <div class="tree-actions">
+                        <div class="tree-btn" id="exportTreeBtn">📸 导出快照</div>
+                        <div class="tree-btn" id="resetViewBtn">🔄 重置视图</div>
+                        <div class="tree-btn" id="animateTreeBtn">✨ 播放演进动画</div>
+                    </div>
+                </div>
+                <div class="tree-canvas">
+                    <svg class="tree-svg" id="treeSvg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-line solid"></div><span>主线演进</span></div>
+                    <div class="legend-item"><div class="legend-line dashed"></div><span>废弃分支</span></div>
+                    <div class="legend-item"><div class="legend-circle main"></div><span>正式版本</span></div>
+                    <div class="legend-item"><div class="legend-circle branch"></div><span>探索版本</span></div>
+                    <div class="legend-item"><div class="legend-circle current"></div><span>当前版本</span></div>
+                    <div class="legend-item"><div class="legend-line solid" style="width:20px"></div><span>里程碑</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="back-btn" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+        返回项目
+    </div>
+    
+    <div class="ai-assistant" id="aiAssistant">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="ai-core-glow"><feGaussianBlur stdDeviation="7.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+                <filter id="ai-particle-glow"><feGaussianBlur stdDeviation="2" /></filter>
+                <linearGradient id="ai-orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.8" /><stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.2" /></linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="15" fill="#a855f7" filter="url(#ai-core-glow)" class="ai-pulse-glow" />
+            <g class="ai-orbit-1"><ellipse cx="60" cy="60" rx="45" ry="15" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(30 60 60)" /><ellipse cx="60" cy="60" rx="55" ry="12" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(90 60 60)" opacity="0.7" /></g>
+            <g class="ai-orbit-2"><ellipse cx="60" cy="60" rx="50" ry="18" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1.5" transform="rotate(150 60 60)" /><ellipse cx="60" cy="60" rx="40" ry="25" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(210 60 60)" opacity="0.6" /></g>
+            <g class="ai-orbit-3"><ellipse cx="60" cy="60" rx="58" ry="10" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1" transform="rotate(60 60 60)" opacity="0.9" /><ellipse cx="60" cy="60" rx="35" ry="30" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(120 60 60)" opacity="0.5" /></g>
+            <path d="M60,60 L60,10" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-1" />
+            <path d="M60,60 L103,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-2" />
+            <path d="M60,60 L17,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-3" />
+            <g class="ai-orbit-1"><circle cx="60" cy="10" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="60" cy="10" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-2"><circle cx="103" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="103" cy="85" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-3"><circle cx="17" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="17" cy="85" r="1.5" fill="#fff" /></g>
+        </svg>
+        <div class="ai-assistant-tooltip">AI 设计助手</div>
+    </div>
+
+    <script>
+        const versions = [
+            { id: 1, number: 'v1.0', date: '04-20', author: '张三', type: 'main', current: false, milestone: true, desc: '🚀 项目启动，完成用户调研与需求分析' },
+            { id: 2, number: 'v1.1', date: '04-21', author: '张三', type: 'main', current: false, milestone: false, desc: '🎨 造型优化迭代，调整比例与曲面' },
+            { id: 3, number: 'v1.2a', date: '04-22', author: '李四', type: 'branch', current: false, milestone: false, desc: '💡 震动提醒方案探索', reason: '震动可能打扰用户' },
+            { id: 4, number: 'v1.2b', date: '04-22', author: '李四', type: 'branch', current: false, milestone: false, desc: '📱 APP联动方案探索', reason: '开发成本过高' },
+            { id: 5, number: 'v1.3', date: '04-23', author: '张三', type: 'main', current: false, milestone: true, desc: '🎨 CMF方案确定，哑光白+暖色灯光' },
+            { id: 6, number: 'v1.3a', date: '04-23', author: '王芳', type: 'branch', current: false, milestone: false, desc: '🎨 磨砂质感实验', reason: '视觉效果不佳' },
+            { id: 7, number: 'v1.4', date: '04-24', author: '张三', type: 'main', current: false, milestone: false, desc: '👤 用户画像更新，聚焦职场人群' },
+            { id: 8, number: 'v1.5', date: '04-25', author: '张三', type: 'main', current: true, milestone: true, desc: '🏆 最终方案：全彩LED灯环水杯' }
+        ];
+        
+        let selectedVersionId = 8;
+        let animationInterval = null;
+        
+        function renderVersionList() {
+            const container = document.getElementById('versionList');
+            document.getElementById('versionCount').innerText = versions.length;
+            container.innerHTML = versions.map(v => `
+                <div class="version-item ${selectedVersionId === v.id ? 'active' : ''}" data-id="${v.id}">
+                    <div class="version-header">
+                        <span class="version-number">${v.number}</span>
+                        <span class="version-badge ${v.type} ${v.current ? 'current' : ''}">${v.type === 'main' ? (v.current ? '当前版本' : '主线') : '分支'}</span>
+                    </div>
+                    <div class="version-date">📅 ${v.date}</div>
+                    <div class="version-author"><div class="author-avatar"></div><span>${v.author}</span></div>
+                    <div class="version-desc">${v.desc}</div>
+                    ${v.reason ? `<div class="version-desc" style="color:#f472b6;">❌ ${v.reason}</div>` : ''}
+                    <div class="restore-btn" data-id="${v.id}">↺ 恢复到此版本</div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.version-item').forEach(item => {
+                item.addEventListener('click', (e) => { if (!e.target.classList.contains('restore-btn')) selectVersion(parseInt(item.dataset.id)); });
+                const btn = item.querySelector('.restore-btn');
+                if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); restoreVersion(parseInt(btn.dataset.id)); });
+            });
+        }
+        
+        function selectVersion(id) { selectedVersionId = id; renderVersionList(); renderTree(false); }
+        
+        function restoreVersion(id) {
+            const v = versions.find(v => v.id === id);
+            if (confirm(`确定恢复到版本 ${v.number} 吗？`)) {
+                versions.forEach(v => v.current = (v.id === id));
+                selectVersion(id);
+                alert(`✅ 已恢复到版本 ${v.number}`);
+            }
+        }
+        
+        function renderTree(animated = false) {
+            const svg = document.getElementById('treeSvg');
+            const main = versions.filter(v => v.type === 'main');
+            const branches = versions.filter(v => v.type === 'branch');
+            const startX = 200, stepY = 70, mainY = 70;
+            
+            let paths = '', nodes = '';
+            
+            // 背景时间轴刻度
+            for (let i = 0; i <= 6; i++) {
+                const y = mainY + i * stepY + 15;
+                nodes += `<line x1="150" y1="${y}" x2="180" y2="${y}" stroke="rgba(139,92,246,0.2)" stroke-width="1"/>`;
+                nodes += `<text x="140" y="${y+3}" fill="rgba(255,255,255,0.25)" font-size="9" text-anchor="end">第${i+1}天</text>`;
+            }
+            
+            // 主线连接线 + 流动光点（放在连接线上，避开节点）
+            for (let i = 0; i < main.length - 1; i++) {
+                const y1 = mainY + i * stepY + 15;
+                const y2 = mainY + (i + 1) * stepY + 15;
+                paths += `<line x1="${startX}" y1="${y1}" x2="${startX}" y2="${y2}" stroke="url(#mainGrad)" stroke-width="3" filter="url(#glow)"/>`;
+                if (animated) {
+                    // 流动光点放在线段中间位置，避开节点
+                    const midY = (y1 + y2) / 2;
+                    paths += `<circle cx="${startX}" cy="${midY}" r="3" fill="#06b6d4" opacity="0.9">
+                        <animate attributeName="cy" values="${y1 + 5};${y2 - 5}" dur="1.5s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.5s" repeatCount="indefinite"/>
+                    </circle>`;
+                }
+            }
+            
+            // 主线节点
+            main.forEach((v, i) => {
+                const y = mainY + i * stepY + 15;
+                const isCur = v.current;
+                const isMilestone = v.milestone;
+                nodes += `<g class="node-group" data-id="${v.id}" style="cursor:pointer">`;
+                nodes += `<circle cx="${startX}" cy="${y}" r="${isCur ? 16 : 12}" fill="url(#nodeGrad)" stroke="${isCur ? '#fff' : 'none'}" stroke-width="2" filter="url(#glow)"/>`;
+                if (isCur) nodes += `<circle cx="${startX}" cy="${y}" r="22" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"><animate attributeName="r" values="20;28;20" dur="2s" repeatCount="indefinite"/></circle>`;
+                if (isMilestone && !isCur) nodes += `<circle cx="${startX}" cy="${y}" r="18" fill="none" stroke="#fbbf24" stroke-width="1.5" opacity="0.5"><animate attributeName="opacity" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite"/></circle>`;
+                nodes += `<text x="${startX + 25}" y="${y + 5}" fill="white" font-size="13" font-weight="600">${v.number}</text>`;
+                nodes += `<text x="${startX + 25}" y="${y + 20}" fill="rgba(255,255,255,0.4)" font-size="10">${v.date}</text>`;
+                if (isCur) nodes += `<text x="${startX + 25}" y="${y - 10}" fill="#a78bfa" font-size="10">⚡ 当前版本</text>`;
+                if (isMilestone && !isCur) nodes += `<text x="${startX + 25}" y="${y - 8}" fill="#fbbf24" font-size="9">🏆 里程碑</text>`;
+                nodes += `<title>${v.desc}</title>`;
+                nodes += `</g>`;
+            });
+            
+            // 分支节点
+            branches.forEach(b => {
+                const parent = main.find(m => m.id === b.parentId);
+                if (parent) {
+                    const pIdx = main.findIndex(m => m.id === parent.id);
+                    const pY = mainY + pIdx * stepY + 15;
+                    const bY = pY + (b.id % 2 === 0 ? -25 : 25);
+                    paths += `<line x1="${startX}" y1="${pY}" x2="${startX + 180}" y2="${bY}" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>`;
+                    nodes += `<g class="node-group branch-node" data-id="${b.id}" style="cursor:pointer">`;
+                    nodes += `<circle cx="${startX + 180}" cy="${bY}" r="10" fill="#c084fc" stroke="none" filter="url(#glow)"/>`;
+                    nodes += `<text x="${startX + 200}" y="${bY + 4}" fill="rgba(255,255,255,0.6)" font-size="11">${b.number}</text>`;
+                    nodes += `<line x1="${startX + 165}" y1="${bY}" x2="${startX + 173}" y2="${bY}" stroke="#f472b6" stroke-width="1.5"/>`;
+                    nodes += `<text x="${startX + 200}" y="${bY + 18}" fill="#f472b6" font-size="9">废弃</text>`;
+                    nodes += `<title>${b.desc}${b.reason ? '\n废弃原因：' + b.reason : ''}</title>`;
+                    nodes += `</g>`;
+                }
+            });
+            
+            // 添加装饰性背景星光
+            for (let i = 0; i < 15; i++) {
+                const rx = 50 + Math.random() * 900;
+                const ry = 20 + Math.random() * 580;
+                nodes += `<circle cx="${rx}" cy="${ry}" r="1" fill="rgba(255,255,255,0.3)"><animate attributeName="opacity" values="0.1;0.6;0.1" dur="${2 + Math.random() * 3}s" repeatCount="indefinite"/></circle>`;
+            }
+            
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient>
+                    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ec4899"/></linearGradient>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="rgba(139,92,246,0.05)"/><stop offset="100%" stop-color="rgba(6,182,212,0.02)"/></linearGradient>
+                    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <rect width="1000" height="620" fill="url(#bgGrad)" rx="16"/>
+                ${paths}
+                ${nodes}
+            `;
+            
+            document.querySelectorAll('.node-group').forEach(g => {
+                g.addEventListener('click', () => selectVersion(parseInt(g.dataset.id)));
+            });
+        }
+        
+        function startAnimation() {
+            if (animationInterval) clearInterval(animationInterval);
+            renderTree(true);
+            animationInterval = setTimeout(() => {
+                renderTree(false);
+                animationInterval = null;
+            }, 5000);
+        }
+        
+        document.getElementById('backBtn').onclick = () => window.location.href = 'template-problem-intermediate.html';
+        document.getElementById('backToCanvas').onclick = () => window.location.href = 'template-problem-intermediate.html';
+        document.getElementById('exportTreeBtn').onclick = () => alert('📸 版本树快照已导出');
+        document.getElementById('resetViewBtn').onclick = () => { if (animationInterval) clearInterval(animationInterval); renderTree(false); };
+        document.getElementById('animateTreeBtn').onclick = startAnimation;
+        document.getElementById('aiAssistant').onclick = () => alert('✨ AI设计助手\n\n我可以帮你分析版本演进趋势，推荐最佳回溯点。');
+        
+        renderVersionList();
+        renderTree(false);
+    </script>
+</body>
+</html>

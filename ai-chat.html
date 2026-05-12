@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DesignScope - AI对话创建</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* 背景层 */
+        .bg-layer { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 80%, #1a0b2e 0%, #050505 100%); z-index: 0; }
+        .glow-spot { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+        .glow-1 { width: 600px; height: 600px; background: #8b5cf6; bottom: -200px; left: -100px; }
+        .glow-2 { width: 500px; height: 500px; background: #06b6d4; top: -100px; right: -100px; opacity: 0.3; }
+        .glow-3 { width: 400px; height: 400px; background: #ec4899; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; }
+        
+        .app-container { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; background: rgba(10, 10, 20, 0.3); }
+        
+        /* 顶部导航栏 */
+        .top-navbar {
+            height: 64px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 24px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; }
+        .logo-text { font-size: 18px; font-weight: 600; color: white; }
+        .nav-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .page-title { font-size: 16px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .convert-btn {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 28px;
+            padding: 8px 20px;
+            color: #a78bfa;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .convert-btn.active {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border-color: transparent;
+            color: white;
+        }
+        .convert-btn.active:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(139,92,246,0.5); }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; }
+        
+        /* 主布局 - 三栏 */
+        .main-layout { flex: 1; display: flex; overflow: hidden; gap: 1px; }
+        
+        /* 左侧栏 - 候选节点 */
+        .candidate-panel {
+            width: 300px;
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(8px);
+            border-right: 1px solid rgba(139, 92, 246, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+        }
+        .panel-header { margin-bottom: 20px; }
+        .panel-title { font-size: 15px; font-weight: 600; color: white; margin-bottom: 4px; }
+        .panel-sub { font-size: 11px; color: rgba(255, 255, 255, 0.4); }
+        .candidate-count {
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            color: #a78bfa;
+            margin-left: 8px;
+        }
+        .candidate-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .candidate-card {
+            background: rgba(25, 20, 40, 0.7);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 14px;
+            padding: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .candidate-card:hover { border-color: rgba(139, 92, 246, 0.5); background: rgba(35, 28, 55, 0.8); }
+        .candidate-type {
+            font-size: 9px;
+            color: #a78bfa;
+            background: rgba(139, 92, 246, 0.15);
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .candidate-content { font-size: 12px; color: rgba(255, 255, 255, 0.7); line-height: 1.4; margin-bottom: 8px; }
+        .candidate-source { font-size: 9px; color: rgba(255, 255, 255, 0.3); }
+        .empty-candidate {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+        }
+        
+        /* 中间区域 - 对话 */
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(10, 10, 20, 0.3);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .message {
+            display: flex;
+            max-width: 70%;
+        }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.ai { align-self: flex-start; }
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .message.ai .message-bubble {
+            background: rgba(30, 25, 50, 0.8);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+            border-bottom-left-radius: 4px;
+        }
+        .collect-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(139, 92, 246, 0.15);
+            border: none;
+            border-radius: 16px;
+            padding: 4px 10px;
+            margin-top: 8px;
+            font-size: 10px;
+            color: #a78bfa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .collect-btn:hover { background: rgba(139, 92, 246, 0.3); }
+        
+        .chat-input-area {
+            padding: 16px 24px 24px;
+            border-top: 1px solid rgba(139, 92, 246, 0.1);
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            background: rgba(30, 25, 50, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 32px;
+            padding: 8px 8px 8px 20px;
+        }
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .chat-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+        .send-btn {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: none;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .send-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px rgba(139,92,246,0.5); }
+        
+        /* 右侧栏 - AI建议 */
+        .suggest-panel {
+            width: 280px;
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(8px);
+            border-left: 1px solid rgba(139, 92, 246, 0.15);
+            padding: 20px 16px;
+        }
+        .suggest-title { font-size: 14px; font-weight: 600; color: white; margin-bottom: 16px; }
+        .suggest-list { display: flex; flex-direction: column; gap: 12px; }
+        .suggest-card {
+            background: rgba(25, 20, 40, 0.6);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .suggest-card:hover { border-color: rgba(139, 92, 246, 0.5); background: rgba(35, 28, 55, 0.7); }
+        .suggest-text { font-size: 12px; color: rgba(255, 255, 255, 0.7); line-height: 1.4; }
+        
+        .return-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #a78bfa;
+            font-size: 13px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .return-btn:hover { background: rgba(139, 92, 246, 0.35); }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"><div class="glow-spot glow-1"></div><div class="glow-spot glow-2"></div><div class="glow-spot glow-3"></div></div>
+    
+    <div class="app-container">
+        <header class="top-navbar">
+            <div class="nav-left" id="backToCreate">
+                <div class="logo-icon">D</div>
+                <span class="logo-text">DesignScope</span>
+            </div>
+            <div class="nav-center"><span class="page-title">AI 对话创建</span></div>
+            <div class="nav-right">
+                <div class="convert-btn" id="convertBtn">转换为节点</div>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+        
+        <div class="main-layout">
+            <!-- 左侧候选节点栏 -->
+            <div class="candidate-panel">
+                <div class="panel-header">
+                    <div class="panel-title">候选节点 <span class="candidate-count" id="candidateCount">0</span></div>
+                    <div class="panel-sub">从对话中收集的设计资产</div>
+                </div>
+                <div class="candidate-list" id="candidateList">
+                    <div class="empty-candidate">💡 点击AI回答下方的「+」<br>将想法添加到此处</div>
+                </div>
+            </div>
+            
+            <!-- 中间对话区域 -->
+            <div class="chat-panel">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai">
+                        <div class="message-bubble">
+                            你好！我是你的AI设计助手 👋<br>
+                            跟我说说你的设计想法，我会帮你拓展思路。<br>
+                            觉得有用的内容可以点击「+ 收集」保存到左侧。
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <div class="input-wrapper">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="输入你的设计想法..." autocomplete="off">
+                        <button class="send-btn" id="sendBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧AI建议栏 -->
+            <div class="suggest-panel">
+                <div class="suggest-title">💡 AI 建议与方向</div>
+                <div class="suggest-list" id="suggestList">
+                    <div class="suggest-card" data-suggest="智能水杯可以有哪些提醒方式？">
+                        <div class="suggest-text">智能水杯可以有哪些提醒方式？</div>
+                    </div>
+                    <div class="suggest-card" data-suggest="设计一款针对独居青年的产品">
+                        <div class="suggest-text">设计一款针对独居青年的产品</div>
+                    </div>
+                    <div class="suggest-card" data-suggest="竞品分析应该关注哪些维度？">
+                        <div class="suggest-text">竞品分析应该关注哪些维度？</div>
+                    </div>
+                    <div class="suggest-card" data-suggest="如何定义用户画像？">
+                        <div class="suggest-text">如何定义用户画像？</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="return-btn" id="returnBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+        返回上一页
+    </div>
+
+    <script>
+        // 候选节点数据
+        let candidates = [];
+        let messageId = 1;
+        
+        // DOM 元素
+        const candidateList = document.getElementById('candidateList');
+        const candidateCount = document.getElementById('candidateCount');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        
+        // 更新候选节点列表
+        function updateCandidateList() {
+            candidateCount.textContent = candidates.length;
+            if (candidates.length === 0) {
+                candidateList.innerHTML = '<div class="empty-candidate">💡 点击AI回答下方的「+」<br>将想法添加到此处</div>';
+                convertBtn.classList.remove('active');
+                return;
+            }
+            convertBtn.classList.add('active');
+            candidateList.innerHTML = candidates.map((c, idx) => `
+                <div class="candidate-card" data-idx="${idx}">
+                    <div class="candidate-type">${c.type || '设计想法'}</div>
+                    <div class="candidate-content">${c.content}</div>
+                    <div class="candidate-source">${c.source}</div>
+                </div>
+            `).join('');
+        }
+        
+        // 添加候选节点
+        function addCandidate(content, source) {
+            candidates.push({
+                content: content,
+                source: source,
+                type: '设计洞察'
+            });
+            updateCandidateList();
+        }
+        
+        // 添加消息到对话
+        function addMessage(role, content, collectable = false, collectContent = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            let actionsHtml = '';
+            if (collectable && role === 'ai') {
+                actionsHtml = `<div><button class="collect-btn" data-collect="${escapeHtml(collectContent || content)}">📥 + 收集到候选节点</button></div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${escapeHtml(content)}
+                    ${actionsHtml}
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 绑定收集按钮事件
+            if (collectable) {
+                const collectBtn = messageDiv.querySelector('.collect-btn');
+                if (collectBtn) {
+                    collectBtn.addEventListener('click', () => {
+                        const collectText = collectBtn.getAttribute('data-collect');
+                        addCandidate(collectText, `来自对话`);
+                        showToast('已添加到候选节点');
+                    });
+                }
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.cssText = `
+                position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+                background: rgba(139,92,246,0.9); color: white; padding: 8px 20px;
+                border-radius: 40px; font-size: 13px; z-index: 1000; animation: fadeOut 2s ease forwards;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+        
+        // AI 模拟回复
+        async function sendMessage(userMessage) {
+            if (!userMessage.trim()) return;
+            
+            // 添加用户消息
+            addMessage('user', userMessage);
+            chatInput.value = '';
+            
+            // 模拟AI回复
+            let aiResponse = '';
+            if (userMessage.includes('智能水杯') || userMessage.includes('提醒')) {
+                aiResponse = `关于「智能水杯提醒」的设计方向，我有几个建议：\n\n1. 灯光提醒：通过LED灯环的颜色变化和闪烁频率提示水量，视觉柔和不打扰\n2. 震动提醒：适合安静环境，但可能略显突兀\n3. 语音提醒：更人性化，但需要语音合成模块\n4. 手机App联动：可记录数据、设置个性化提醒\n\n灯光方案在不打扰性上表现最好，更易被用户接受。你觉得哪个方向更适合你的目标用户？`;
+            } else if (userMessage.includes('独居青年') || userMessage.includes('产品')) {
+                aiResponse = `针对「独居青年」的产品设计，可以关注以下痛点：\n\n1. 孤独感：可设计陪伴型产品（语音交互、灯光情绪反馈）\n2. 生活便利：智能家居联动、自动化场景（灯光/温度/饮水）\n3. 健康管理：规律作息提醒、饮水/用药记录\n4. 社交连接：设计分享机制，与朋友互相鼓励\n\n建议从「健康管理」切入，独居青年往往忽视饮水规律，智能水杯是个不错的方向。`;
+            } else if (userMessage.includes('竞品')) {
+                aiResponse = `竞品分析可以从这几个维度展开：\n\n1. 核心功能对比：提醒方式、数据记录、App体验\n2. 价格区间：不同价位档的配置差异\n3. 用户评价：好评点vs差评点分析\n4. 设计风格：材质、形态、交互方式\n5. 市场定位：目标人群、使用场景\n\n分析后可以找到差异化机会，比如「性价比+无感交互」是当前市场的空白点。`;
+            } else if (userMessage.includes('用户画像')) {
+                aiResponse = `用户画像的关键要素：\n\n1. 基本信息：年龄、职业、收入、居住地\n2. 行为习惯：日常作息、使用场景、现有解决方案\n3. 痛点需求：核心问题、未被满足的需求\n4. 目标动机：使用产品的驱动因素\n5. 性格特征：价值观、审美偏好\n\n建议先通过访谈收集真实数据，再提炼典型用户画像。`;
+            } else {
+                aiResponse = `这是一个很好的设计方向！让我帮你拓展一下思路：\n\n首先，明确你的目标用户是谁？他们有什么未被满足的需求？\n\n其次，考虑现有的解决方案有哪些不足？\n\n最后，可以尝试从技术可能性或用户情感体验两个角度发散创意。\n\n需要我针对某个具体方向深入探讨吗？`;
+            }
+            
+            // 模拟打字延迟
+            setTimeout(() => {
+                addMessage('ai', aiResponse, true, aiResponse.split('\n')[0]);
+                messageId++;
+            }, 300);
+        }
+        
+        // 转换节点
+        function convertToNodes() {
+            if (candidates.length === 0) {
+                showToast('请先收集一些候选节点');
+                return;
+            }
+            showToast(`✅ 已生成 ${candidates.length} 个设计节点，即将进入主画布`);
+            setTimeout(() => {
+                alert(`已生成 ${candidates.length} 个节点，即将跳转到主画布。\n\n收集的设计资产：\n${candidates.map(c => `• ${c.content.substring(0, 50)}...`).join('\n')}`);
+            }, 500);
+        }
+        
+        // 事件绑定
+        sendBtn.addEventListener('click', () => sendMessage(chatInput.value));
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage(chatInput.value);
+        });
+        convertBtn.addEventListener('click', convertToNodes);
+        
+        // 建议卡片点击
+        document.querySelectorAll('.suggest-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const text = card.getAttribute('data-suggest');
+                if (text) sendMessage(text);
+            });
+        });
+        
+        // 返回按钮
+        document.getElementById('returnBtn').addEventListener('click', () => {
+            if (confirm('确定返回上一页吗？未转换的候选节点将丢失。')) {
+                window.location.href = 'create.html';
+            }
+        });
+        document.getElementById('backToCreate').addEventListener('click', () => {
+            if (confirm('确定返回上一页吗？未转换的候选节点将丢失。')) {
+                window.location.href = 'create.html';
+            }
+        });
+    </script>
+</body>
+</html>

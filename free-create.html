@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DesignScope - 自由创建（学术结构版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* 背景层 */
+        .bg-layer { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 80%, #1a0b2e 0%, #050505 100%); z-index: 0; }
+        .glow-spot { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+        .glow-1 { width: 600px; height: 600px; background: #8b5cf6; bottom: -200px; left: -100px; }
+        .glow-2 { width: 500px; height: 500px; background: #06b6d4; top: -100px; right: -100px; opacity: 0.3; }
+        .glow-3 { width: 400px; height: 400px; background: #ec4899; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; }
+        
+        .app-container { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; background: rgba(10, 10, 20, 0.3); }
+        
+        /* 顶部导航栏 */
+        .top-navbar {
+            height: 64px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 24px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; }
+        .logo-text { font-size: 18px; font-weight: 600; color: white; }
+        .page-title { font-size: 16px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .zoom-control { font-size: 13px; color: rgba(255, 255, 255, 0.6); background: rgba(30, 30, 50, 0.5); padding: 6px 12px; border-radius: 20px; }
+        .share-text, .export-text { font-size: 13px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
+        .divider { width: 1px; height: 16px; background: rgba(255, 255, 255, 0.2); }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; }
+        
+        .main-layout { flex: 1; display: flex; overflow: hidden; }
+        
+        /* 左侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(8px);
+            border-right: 1px solid rgba(139, 92, 246, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+        }
+        .section-title { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.5); margin-bottom: 12px; padding-left: 8px; letter-spacing: 0.5px; }
+        .category-item { padding: 10px 12px; margin: 4px 0; border-radius: 12px; font-size: 14px; color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s; }
+        .category-item.active { background: rgba(139, 92, 246, 0.25); color: white; }
+        .recent-item { padding: 8px 12px; font-size: 13px; color: rgba(255, 255, 255, 0.5); border-radius: 8px; cursor: pointer; }
+        .recent-item:hover { background: rgba(139, 92, 246, 0.1); }
+        
+        /* 中央画布 */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 24px;
+            background: rgba(10, 10, 20, 0.4);
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .template-title-section { display: flex; gap: 12px; align-items: center; }
+        .difficulty-badge { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #a78bfa; }
+        .category-badge { background: linear-gradient(135deg, #8b5cf620, #06b6d420); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: rgba(255, 255, 255, 0.8); }
+        .canvas-description { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.15); }
+        
+        /* 节点画布 - 修复为横向 flexible wrap 布局 */
+        .nodes-canvas {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 24px;
+            padding: 30px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 25px;
+            justify-content: flex-start;
+            align-items: flex-start;
+            align-content: flex-start;
+            overflow-y: auto;
+            min-height: 400px;
+        }
+        
+        /* 节点卡片 - 玻璃拟态，学术风格 */
+        .node-card {
+            width: 310px;
+            background: rgba(20, 15, 35, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transition: all 0.25s ease;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .node-card:hover { border-color: rgba(139, 92, 246, 0.85); transform: translateY(-3px); background: rgba(35, 28, 55, 0.94); }
+        .node-gradient-bar { height: 4px; background: linear-gradient(90deg, #06b6d4, #8b5cf6, #ec4899); width: 100%; }
+        .node-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0 16px; }
+        .node-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+        .node-title { font-size: 15px; font-weight: 700; color: white; }
+        
+        /* 结构化的节点内容区域 - 基于学术框架 */
+        .node-content {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(139, 92, 246, 0.15);
+            margin-top: 8px;
+        }
+        .node-field {
+            margin-bottom: 12px;
+        }
+        .node-field-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #a78bfa;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .node-field-value {
+            font-size: 11px;
+            color: rgba(220, 220, 255, 0.7);
+            line-height: 1.4;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px 8px;
+            border-radius: 8px;
+            font-style: italic;
+        }
+        .node-field-value.placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            font-style: normal;
+        }
+        
+        .node-tags { padding: 8px 16px 14px; display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid rgba(139, 92, 246, 0.1); }
+        .tag { background: rgba(139, 92, 246, 0.2); border-radius: 20px; padding: 3px 10px; font-size: 9px; font-weight: 500; color: #c084fc; }
+        
+        /* 添加节点按钮 */
+        .add-node-btn {
+            width: 310px;
+            min-height: 280px;
+            background: rgba(25, 20, 40, 0.5);
+            backdrop-filter: blur(12px);
+            border: 2px dashed rgba(139, 92, 246, 0.4);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+            flex-shrink: 0;
+        }
+        .add-node-btn:hover { border-color: rgba(139, 92, 246, 0.8); background: rgba(35, 28, 55, 0.6); transform: translateY(-3px); }
+        .add-node-btn svg { stroke: #a78bfa; }
+        .add-node-btn span { color: #a78bfa; font-size: 14px; }
+        
+        /* 右侧属性面板 */
+        .inspector {
+            width: 320px;
+            background: rgba(15, 15, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(139, 92, 246, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+        }
+        .inspector-header { font-size: 16px; font-weight: 600; color: white; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
+        .inspector-section { margin-bottom: 24px; }
+        .section-label { font-size: 12px; font-weight: 600; color: rgba(139, 92, 246, 0.8); margin-bottom: 12px; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .info-label { color: rgba(255, 255, 255, 0.5); }
+        .info-value { color: rgba(255, 255, 255, 0.8); }
+        .edit-field {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(139,92,246,0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 12px;
+            width: 100%;
+            margin-bottom: 12px;
+            font-family: inherit;
+        }
+        .edit-field:focus { outline: none; border-color: #a78bfa; }
+        .save-btn { background: linear-gradient(135deg, #7c3aed, #a855f7); border: none; border-radius: 24px; padding: 10px; color: white; font-weight: 600; cursor: pointer; margin-top: 12px; width: 100%; }
+        .save-btn:hover { opacity: 0.9; }
+        
+        .return-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #a78bfa;
+            font-size: 13px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .return-btn:hover { background: rgba(139, 92, 246, 0.35); }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"><div class="glow-spot glow-1"></div><div class="glow-spot glow-2"></div><div class="glow-spot glow-3"></div></div>
+    
+    <div class="app-container">
+        <header class="top-navbar">
+            <div class="nav-left" id="backBtn">
+                <div class="logo-icon">D</div>
+                <span class="logo-text">DesignScope</span>
+            </div>
+            <div class="page-title">自由创建 · 结构化设计节点</div>
+            <div class="nav-right">
+                <div class="zoom-control">缩放100%</div>
+                <div class="divider"></div>
+                <div class="share-text">分享</div>
+                <div class="export-text">导出成果</div>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+        
+        <div class="main-layout">
+            <!-- 左侧边栏 -->
+            <aside class="sidebar">
+                <div class="section-title">模板分类</div>
+                <div class="category-item" data-category="problem">问题驱动设计</div>
+                <div class="category-item" data-category="solution">解决方案驱动设计</div>
+                <div class="category-item" data-category="double">双钻模型</div>
+                <div class="category-item active" data-category="free">自由创建</div>
+                <div class="section-title" style="margin-top: auto; margin-bottom: 12px;">学术依据</div>
+                <div class="recent-item" style="font-size: 10px; color: #a78bfa;">📚 Baustein (ISJ, 2024)</div>
+                <div class="recent-item" style="font-size: 10px; color: #a78bfa;">🎴 Design Card Survey (INTERACT, 2013)</div>
+                <div class="recent-item" style="font-size: 10px; color: #a78bfa;">🏗️ Method Card Design Dimensions</div>
+            </aside>
+            
+            <!-- 中央画布 -->
+            <main class="canvas-area">
+                <div class="canvas-header">
+                    <div class="template-title-section">
+                        <div class="difficulty-badge">自由模式</div>
+                        <div class="category-badge">基于结构化设计卡片</div>
+                    </div>
+                </div>
+                <div class="canvas-description">
+                    基于学术文献中的设计卡片框架，每个节点代表一个结构化的设计资产。点击卡片编辑内容，支持自定义字段。
+                </div>
+                
+                <div class="nodes-canvas" id="nodesCanvas">
+                    <!-- 节点内容会通过JS动态生成，确保布局正确 -->
+                </div>
+            </main>
+            
+            <!-- 右侧属性面板 -->
+            <aside class="inspector" id="inspector">
+                <div class="inspector-header">属性检查器</div>
+                <div class="inspector-content" id="inspectorContent">
+                    <div class="inspector-section">
+                        <div class="section-label">当前选中节点</div>
+                        <div class="info-row"><span class="info-label">节点类型</span><span class="info-value" id="currentNodeType">-</span></div>
+                        <div class="info-row"><span class="info-label">节点ID</span><span class="info-value" id="currentNodeId">-</span></div>
+                    </div>
+                    <div class="inspector-section">
+                        <div class="section-label">编辑节点内容</div>
+                        <div id="dynamicFields"></div>
+                        <button class="save-btn" id="saveNodeBtn">保存修改</button>
+                    </div>
+                    <div class="divider-line" style="height:1px; background:rgba(139,92,246,0.15); margin:16px 0;"></div>
+                    <div class="inspector-section">
+                        <div class="section-label">学术参考</div>
+                        <div class="info-row"><span class="info-label">框架来源</span><span class="info-value">Baustein (ISJ, 2024)</span></div>
+                        <div class="info-row"><span class="info-label">卡片维度</span><span class="info-value">目的/方法/形式/定制</span></div>
+                    </div>
+                </div>
+                <button class="upgrade-btn" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); border:none; border-radius:28px; padding:12px; color:white; font-weight:600; margin-top:20px;">升级计划</button>
+            </aside>
+        </div>
+    </div>
+    
+    <div class="return-btn" id="returnBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+        返回上一页
+    </div>
+
+    <script>
+        let nodeIdCounter = 0;
+        let selectedNode = null;
+        let currentNodeData = null;
+        
+        // 节点类型定义 - 基于设计卡片学术框架
+        const nodeSchemas = {
+            problem: {
+                name: '设计问题',
+                icon: '🎯',
+                fields: [
+                    { label: '问题陈述', placeholder: '核心设计挑战描述' },
+                    { label: '边界条件', placeholder: '约束与限制因素' },
+                    { label: '情境语境', placeholder: '使用场景与上下文' }
+                ],
+                gradient: '#f59e0b, #ec4899',
+                tags: ['问题定义', '需求分析']
+            },
+            persona: {
+                name: '用户画像',
+                icon: '👤',
+                fields: [
+                    { label: '人口学特征', placeholder: '年龄、职业、地点等' },
+                    { label: '目标与动机', placeholder: '用户希望通过产品达成的目标' },
+                    { label: '痛点与需求', placeholder: '未被满足的需求和困扰' }
+                ],
+                gradient: '#3b82f6, #8b5cf6',
+                tags: ['用户研究', '同理心']
+            },
+            principle: {
+                name: '设计原则',
+                icon: '📐',
+                fields: [
+                    { label: '核心原则', placeholder: '指导设计的核心理念' },
+                    { label: '形式/功能/行为', placeholder: '物质性、行为性特征描述' },
+                    { label: '边界条件', placeholder: '适用场景与限制' }
+                ],
+                gradient: '#10b981, #34d399',
+                tags: ['设计准则', '方法论']
+            },
+            solution: {
+                name: '设计方案',
+                icon: '💡',
+                fields: [
+                    { label: '方案概述', placeholder: '设计方案的核心描述' },
+                    { label: '关键特性', placeholder: '主要功能与属性' },
+                    { label: '预期效果', placeholder: '解决问题的方式与效果' }
+                ],
+                gradient: '#f43f5e, #fb7185',
+                tags: ['概念设计', '方案生成']
+            },
+            evaluation: {
+                name: '设计评估',
+                icon: '📊',
+                fields: [
+                    { label: '评估方法', placeholder: '用户测试/专家评审/启发式评估' },
+                    { label: '评估指标', placeholder: '可用性/满意度/效率/有效性' },
+                    { label: '评估结果', placeholder: '发现的问题与改进方向' }
+                ],
+                gradient: '#8b5cf6, #c084fc',
+                tags: ['评估验证', '迭代优化']
+            },
+            context: {
+                name: '情境分析',
+                icon: '🌍',
+                fields: [
+                    { label: '环境扫描', placeholder: '政策/经济/社会/技术' },
+                    { label: '利益相关者', placeholder: '相关群体与角色' },
+                    { label: '机会与威胁', placeholder: '优势/劣势/机会/威胁' }
+                ],
+                gradient: '#14b8a6, #5eead4',
+                tags: ['情境分析', '竞品研究']
+            }
+        };
+        
+        const nodeTypes = ['problem', 'persona', 'principle', 'solution', 'evaluation', 'context'];
+        
+        // 创建结构化的节点卡片
+        function createStructuredNode(nodeId, type = null) {
+            const actualType = type || nodeTypes[Math.floor(Math.random() * nodeTypes.length)];
+            const schema = nodeSchemas[actualType];
+            if (!schema) return createStructuredNode(nodeId, 'problem');
+            
+            const card = document.createElement('div');
+            card.className = 'node-card';
+            card.setAttribute('data-node-id', nodeId);
+            card.setAttribute('data-node-type', actualType);
+            
+            // 构建字段HTML
+            let fieldsHtml = '';
+            schema.fields.forEach(field => {
+                fieldsHtml += `
+                    <div class="node-field">
+                        <span class="node-field-label">${field.label}</span>
+                        <div class="node-field-value placeholder">[待填写] ${field.placeholder}</div>
+                    </div>
+                `;
+            });
+            
+            // 标签HTML
+            let tagsHtml = '';
+            schema.tags.forEach(tag => {
+                tagsHtml += `<span class="tag">${tag}</span>`;
+            });
+            
+            card.innerHTML = `
+                <div class="node-gradient-bar"></div>
+                <div class="node-header">
+                    <div class="node-icon" style="background: linear-gradient(135deg, ${schema.gradient});"></div>
+                    <span class="node-title">${schema.name}</span>
+                </div>
+                <div class="node-content">
+                    ${fieldsHtml}
+                </div>
+                <div class="node-tags">${tagsHtml}</div>
+            `;
+            
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectNode(card, actualType, nodeId);
+            });
+            return card;
+        }
+        
+        // 选中节点并更新右侧面板
+        function selectNode(card, type, nodeId) {
+            document.querySelectorAll('.node-card').forEach(n => n.style.borderColor = 'rgba(139,92,246,0.4)');
+            card.style.borderColor = '#a78bfa';
+            selectedNode = card;
+            currentNodeData = { type, nodeId };
+            
+            document.getElementById('currentNodeType').innerText = nodeSchemas[type]?.name || type;
+            document.getElementById('currentNodeId').innerText = `N${String(nodeId).padStart(3, '0')}`;
+            
+            // 动态生成编辑字段
+            const schema = nodeSchemas[type];
+            const fieldsContainer = document.getElementById('dynamicFields');
+            if (schema) {
+                fieldsContainer.innerHTML = schema.fields.map(field => `
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: #a78bfa; margin-bottom: 4px;">${field.label}</div>
+                        <input type="text" class="edit-field" data-field="${field.label}" placeholder="${field.placeholder}" value="">
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // 添加新节点
+        function addNewNode() {
+            nodeIdCounter++;
+            const newNode = createStructuredNode(nodeIdCounter);
+            const canvas = document.getElementById('nodesCanvas');
+            canvas.appendChild(newNode);
+            // 滚动到新节点位置
+            newNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            selectNode(newNode, newNode.getAttribute('data-node-type'), nodeIdCounter);
+        }
+        
+        // 保存节点修改
+        function saveCurrentNode() {
+            if (selectedNode && currentNodeData) {
+                const inputs = document.querySelectorAll('.edit-field');
+                const nodeContent = selectedNode.querySelector('.node-content');
+                if (nodeContent && inputs.length > 0) {
+                    const fieldDivs = nodeContent.querySelectorAll('.node-field');
+                    inputs.forEach((input, idx) => {
+                        if (fieldDivs[idx]) {
+                            const valueDiv = fieldDivs[idx].querySelector('.node-field-value');
+                            if (valueDiv) {
+                                const newValue = input.value.trim();
+                                if (newValue) {
+                                    valueDiv.innerHTML = newValue;
+                                    valueDiv.classList.remove('placeholder');
+                                } else {
+                                    const placeholder = input.placeholder;
+                                    valueDiv.innerHTML = `[待填写] ${placeholder}`;
+                                    valueDiv.classList.add('placeholder');
+                                }
+                            }
+                        }
+                    });
+                }
+                alert('节点内容已保存');
+            }
+        }
+        
+        // 初始化示例节点
+        function initSampleNodes() {
+            const canvas = document.getElementById('nodesCanvas');
+            canvas.innerHTML = '';
+            
+            // 创建6个不同类型的示例节点（横向排列）
+            const sampleTypes = ['problem', 'persona', 'principle', 'solution', 'evaluation', 'context'];
+            sampleTypes.forEach((type, idx) => {
+                const node = createStructuredNode(idx, type);
+                canvas.appendChild(node);
+            });
+            nodeIdCounter = 5;
+            
+            // 添加添加按钮
+            const addBtn = document.createElement('div');
+            addBtn.className = 'add-node-btn';
+            addBtn.id = 'addNodeBtn';
+            addBtn.innerHTML = `
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>添加结构化节点</span>
+                <span style="font-size: 10px; opacity: 0.6;">基于设计卡片框架</span>
+            `;
+            addBtn.addEventListener('click', addNewNode);
+            canvas.appendChild(addBtn);
+        }
+        
+        // 按钮事件
+        function bindEvents() {
+            const addBtn = document.getElementById('addNodeBtn');
+            if (addBtn) addBtn.addEventListener('click', addNewNode);
+            const saveBtn = document.getElementById('saveNodeBtn');
+            if (saveBtn) saveBtn.addEventListener('click', saveCurrentNode);
+        }
+        
+        // 返回按钮
+        const backBtn = document.getElementById('backBtn');
+        const returnBtn = document.getElementById('returnBtn');
+        backBtn.addEventListener('click', () => {
+            if (confirm('确定返回上一页吗？')) window.location.href = 'create.html';
+        });
+        returnBtn.addEventListener('click', () => {
+            if (confirm('确定返回上一页吗？')) window.location.href = 'create.html';
+        });
+        
+        // 分类切换
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                if (category !== 'free') {
+                    alert(`切换到「${this.innerText}」分类\n将跳转到模板页面。`);
+                    window.location.href = `template-${category}.html`;
+                } else {
+                    document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        // 初始化
+        initSampleNodes();
+        bindEvents();
+        setTimeout(() => {
+            const firstNode = document.querySelector('.node-card');
+            if (firstNode) selectNode(firstNode, 'problem', 0);
+        }, 100);
+    </script>
+</body>
+</html>

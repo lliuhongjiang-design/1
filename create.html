@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DesignScope - AI辅助设计平台</title>
+    <script src="https://static.mastergo.com/static/ai/resource/html/tailwind/index.global.js"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --color-purple-900: #3b0764;
+            --color-purple-800: #581c87;
+            --color-purple-600: #9333ea;
+            --color-purple-500: #a855f7;
+            --color-purple-400: #c084fc;
+            --color-purple-300: #d8b4fe;
+            --color-dark-base: #050505;
+            --animate-spin-slow: spin 8s linear infinite;
+            --animate-spin-slower: spin 12s linear infinite;
+            --animate-spin-reverse: spin-reverse 10s linear infinite;
+            --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            --animate-float: float 6s ease-in-out infinite;
+        }
+
+        @keyframes spin-reverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 20px; }
+        }
+
+        /* 智能助手专属动画 - 与登录页完全一致 */
+        @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes reverse-orbit { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; filter: blur(25px); } 50% { opacity: 0.8; filter: blur(35px); } }
+        .ai-orbit-1 { animation: orbit 20s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-2 { animation: reverse-orbit 25s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-3 { animation: orbit 30s linear infinite; transform-origin: 60px 60px; }
+        .ai-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .tech-grid {
+            background-image: repeating-linear-gradient(0deg, rgba(168,85,247,0.08) 0px, rgba(168,85,247,0.08) 1px, transparent 1px, transparent 8px),
+                              repeating-linear-gradient(90deg, rgba(168,85,247,0.08) 0px, rgba(168,85,247,0.08) 1px, transparent 1px, transparent 8px);
+        }
+        .tech-dots {
+            background-image: radial-gradient(rgba(168,85,247,0.15) 1px, transparent 1px);
+            background-size: 12px 12px;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+        .glow-pulse { animation: pulse 3s ease-in-out infinite; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark-base text-white font-sans overflow-hidden h-screen w-screen selection:bg-purple-500/30">
+
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div class="absolute inset-0 bg-dark-base"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-900/30 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-tl from-purple-500/15 to-transparent"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_rgba(168,85,247,0.1)_0%,_transparent_70%)]"></div>
+        <div class="absolute top-[-10%] left-[-10%] w-[120%] h-[120%] opacity-30 blur-2xl transform -rotate-12">
+            <div class="absolute top-[20%] left-[10%] w-[80%] h-[4px] bg-gradient-to-r from-purple-400 to-purple-900 rounded-full"></div>
+            <div class="absolute top-[40%] left-[20%] w-[60%] h-[8px] bg-gradient-to-r from-purple-500 to-purple-800 rounded-full opacity-60"></div>
+            <div class="absolute top-[60%] left-[5%] w-[90%] h-[2px] bg-gradient-to-r from-purple-300 to-purple-900 rounded-full"></div>
+        </div>
+        <div class="absolute top-0 left-0 w-[40px] h-full bg-gradient-to-b from-purple-900/50 to-transparent blur-[15px]"></div>
+        <div class="absolute top-0 right-0 w-[20px] h-full bg-gradient-to-b from-purple-400/30 to-transparent blur-[10px]"></div>
+        <div class="absolute bottom-0 left-0 w-full h-[150px] bg-gradient-to-r from-purple-900/40 via-purple-500/20 to-purple-900/40 blur-[50px]"></div>
+    </div>
+
+    <div class="relative z-10 flex h-full w-full">
+        <aside class="w-[280px] h-full bg-black/40 backdrop-blur-[10px] border-r border-purple-500/20 flex flex-col shrink-0">
+            <div class="p-6 flex items-center gap-3 border-b border-purple-500/20 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 p-[2px] shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+                    <div class="w-full h-full bg-black rounded-full flex items-center justify-center">
+                        <span class="text-white text-xl font-bold tracking-wider">D</span>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-white text-[18px] font-bold tracking-wide">DesignScope</span>
+                    <span class="text-purple-400/60 text-[10px] uppercase tracking-wider">设计智能体</span>
+                </div>
+            </div>
+            <div class="px-5 mb-6">
+                <button class="w-full h-[44px] bg-gradient-to-r from-purple-600 to-purple-500 rounded-[24px] text-white font-medium text-sm shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 group">
+                    <svg class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    新建项目
+                </button>
+            </div>
+            <div class="px-3 mb-6">
+                <h3 class="text-gray-400/80 text-[12px] px-3 mb-2 font-medium tracking-wider">文件管理</h3>
+                <nav class="flex flex-col gap-1">
+                    <a href="#" class="flex items-center gap-3 px-3 h-[40px] rounded-lg text-white/80 text-[14px] hover:bg-purple-500/20 hover:text-white transition-all duration-300 group">
+                        <svg class="w-4 h-4 text-purple-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        所有文件
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-3 h-[40px] rounded-lg text-white/80 text-[14px] hover:bg-purple-500/20 hover:text-white transition-all duration-300 group">
+                        <svg class="w-4 h-4 text-purple-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        最近文件
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-3 h-[40px] rounded-lg text-white/80 text-[14px] hover:bg-purple-500/20 hover:text-white transition-all duration-300 group">
+                        <svg class="w-4 h-4 text-purple-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        回收站
+                    </a>
+                </nav>
+            </div>
+            <div class="px-3 mb-auto">
+                <h3 class="text-gray-400/80 text-[12px] px-3 mb-3 font-medium tracking-wider">模板库快捷入口</h3>
+                <div class="flex px-3 gap-3 justify-between">
+                    <div class="w-[70px] h-[70px] rounded-[12px] bg-gradient-to-br from-purple-700 to-purple-900 p-[1px] cursor-pointer group hover:scale-105 transition-all duration-300 relative overflow-hidden" data-template-type="problem">
+                        <div class="absolute inset-0 tech-dots opacity-30"></div>
+                        <div class="w-full h-full rounded-[11px] bg-gradient-to-br from-purple-900/90 to-purple-800/50 flex flex-col items-center justify-center gap-1 relative z-10">
+                            <svg class="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span class="text-[10px] text-white font-medium">问题驱动</span>
+                        </div>
+                    </div>
+                    <div class="w-[70px] h-[70px] rounded-[12px] bg-gradient-to-br from-purple-700 to-purple-900 p-[1px] cursor-pointer group hover:scale-105 transition-all duration-300 relative overflow-hidden" data-template-type="solution">
+                        <div class="absolute inset-0 tech-dots opacity-30"></div>
+                        <div class="w-full h-full rounded-[11px] bg-gradient-to-br from-purple-900/90 to-purple-800/50 flex flex-col items-center justify-center gap-1 relative z-10">
+                            <svg class="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            <span class="text-[10px] text-white font-medium">方案驱动</span>
+                        </div>
+                    </div>
+                    <div class="w-[70px] h-[70px] rounded-[12px] bg-gradient-to-br from-purple-700 to-purple-900 p-[1px] cursor-pointer group hover:scale-105 transition-all duration-300 relative overflow-hidden" data-template-type="double-diamond">
+                        <div class="absolute inset-0 tech-dots opacity-30"></div>
+                        <div class="w-full h-full rounded-[11px] bg-gradient-to-br from-purple-900/90 to-purple-800/50 flex flex-col items-center justify-center gap-1 relative z-10">
+                            <svg class="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+                            <span class="text-[10px] text-white font-medium">双钻模型</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 mt-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-400/80 text-[12px]">存储空间</span>
+                    <span class="text-purple-400 text-[12px]">45%</span>
+                </div>
+                <div class="w-full h-[4px] bg-gray-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-purple-600 to-purple-400 w-[45%] rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 h-full p-8 flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="w-full max-w-[1200px] h-full max-h-[800px] bg-white/[0.03] backdrop-blur-[5px] rounded-[24px] border border-white/[0.05] p-10 flex flex-col relative shadow-2xl">
+                <header class="text-center mb-16 animate-float" style="animation-duration: 8s;">
+                    <h1 class="text-[24px] font-bold text-white tracking-tight mb-2 drop-shadow-lg">欢迎回来，新手设计师</h1>
+                    <p class="text-[14px] text-gray-400/80 tracking-wide">选择一种方式开始新设计，释放你的无限潜能</p>
+                </header>
+
+                <div class="flex-1 flex items-center justify-center relative w-full">
+                    <div class="absolute top-[35%] left-[20%] right-[20%] h-[1px] border-t border-dashed border-purple-400/30 z-0"></div>
+                    <div class="flex flex-row items-start justify-center gap-[80px] z-10 w-full">
+                        <div class="flex flex-col items-center text-center group cursor-pointer w-[240px]" id="aiChatBtn">
+                            <div class="relative w-[140px] h-[140px] mb-8 flex items-center justify-center transition-transform duration-700 group-hover:-translate-y-4">
+                                <div class="absolute inset-0 rounded-full border-[3px] border-purple-400/40 rotate-45 border-t-transparent border-b-transparent animate-spin-slow group-hover:border-purple-400/80 transition-colors"></div>
+                                <div class="absolute inset-2 rounded-full border-[3px] border-purple-500/50 -rotate-45 border-l-transparent border-r-transparent animate-spin-reverse group-hover:border-purple-300/90 transition-colors"></div>
+                                <div class="w-[25px] h-[25px] bg-purple-300 rounded-full shadow-[0_0_20px_rgba(216,180,254,0.8)]"></div>
+                                <div class="absolute -inset-4 rounded-full border-[4px] border-purple-500/80 border-b-transparent border-l-transparent rotate-12 animate-pulse-slow"></div>
+                                <div class="absolute -bottom-6 w-1 h-8 bg-gradient-to-t from-transparent to-purple-500/50 blur-[2px]"></div>
+                            </div>
+                            <h2 class="text-[18px] font-bold text-white mb-2 group-hover:text-purple-300">AI 对话创建</h2>
+                            <p class="text-[12px] text-gray-400/80 leading-relaxed max-w-[200px]">通过自然语言与AI对话<br>智能生成节点与框架</p>
+                        </div>
+                        <div class="flex flex-col items-center text-center group cursor-pointer w-[240px]" id="templateBtn">
+                            <div class="relative w-[130px] h-[130px] mb-8 flex items-center justify-center transition-transform duration-700 group-hover:-translate-y-4">
+                                <div class="absolute w-[90px] h-[90px] border-[2px] border-purple-400/50 rotate-45 animate-spin-slower"></div>
+                                <div class="absolute w-[90px] h-[90px] border-[2px] border-purple-500/40 rotate-[15deg] animate-spin-reverse"></div>
+                                <div class="absolute w-[90px] h-[90px] border-[2px] border-purple-600/30 rotate-[75deg] animate-spin-slow"></div>
+                                <div class="w-[15px] h-[15px] bg-purple-800 rounded-full shadow-[0_0_15px_rgba(88,28,135,1)] z-10"></div>
+                                <div class="absolute w-[130px] h-[130px] animate-spin-slow">
+                                    <div class="absolute top-0 left-1/2 w-2 h-2 bg-purple-300 rounded-full shadow-[0_0_5px_#d8b4fe]"></div>
+                                    <div class="absolute bottom-4 left-4 w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                                    <div class="absolute bottom-4 right-4 w-2 h-2 bg-purple-500 rounded-full"></div>
+                                </div>
+                            </div>
+                            <h2 class="text-[18px] font-bold text-white mb-2 group-hover:text-purple-300">模板创建</h2>
+                            <p class="text-[12px] text-gray-400/80 leading-relaxed max-w-[200px]">从预设的专业设计流程<br>快速开始你的工作</p>
+                        </div>
+                        <div class="flex flex-col items-center text-center group cursor-pointer w-[240px]" id="freeCreateBtn">
+                            <div class="relative w-[130px] h-[130px] mb-8 flex items-center justify-center transition-transform duration-700 group-hover:-translate-y-4">
+                                <div class="absolute w-[130px] h-[130px] rounded-full border-[2px] border-purple-400/30 border-dashed animate-spin-slow"></div>
+                                <div class="absolute w-[90px] h-[90px] rounded-full border-[2px] border-purple-500/50 border-dotted animate-spin-reverse"></div>
+                                <div class="absolute w-[50px] h-[50px] rounded-full border-[2px] border-purple-600/70 animate-[spin_4s_linear_infinite]"></div>
+                                <div class="w-[8px] h-[8px] bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,1)]"></div>
+                            </div>
+                            <h2 class="text-[18px] font-bold text-white mb-2 group-hover:text-purple-300">自由创建</h2>
+                            <p class="text-[12px] text-gray-400/80 leading-relaxed max-w-[200px]">从零开始的空白画布<br>完全自主控制设计流程</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-8 border-t border-white/[0.05]">
+                    <h3 class="text-[12px] text-gray-400/80 mb-4 font-medium tracking-wider">最近项目</h3>
+                    <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                        <div class="min-w-[180px] h-[100px] rounded-[12px] bg-gradient-to-br from-purple-900/60 to-purple-800/30 backdrop-blur-md border border-purple-500/20 p-3 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-purple-400/50 transition-all">
+                            <div class="absolute inset-0 tech-grid"></div>
+                            <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,_rgba(168,85,247,0.15),_transparent)]"></div>
+                            <svg class="w-5 h-5 text-purple-400/50 mb-auto relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 1.79 4 4 4h8c2.21 0 4-1.79 4-4V7"></path><path d="M4 7l4-4m12 4l-4-4M2 7h20"></path></svg>
+                            <div class="relative z-10"><h4 class="text-[14px] text-white font-medium truncate">电商后台数据大屏</h4><p class="text-[10px] text-purple-300/50 mt-1">2 小时前修改</p></div>
+                        </div>
+                        <div class="min-w-[180px] h-[100px] rounded-[12px] bg-gradient-to-br from-purple-900/60 to-purple-800/30 backdrop-blur-md border border-purple-500/20 p-3 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-purple-400/50 transition-all">
+                            <div class="absolute inset-0 tech-grid"></div>
+                            <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(168,85,247,0.15),_transparent)]"></div>
+                            <svg class="w-5 h-5 text-purple-400/50 mb-auto relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2v4M12 18v4M5 12H2m4 0h12M12 6a6 6 0 100 12 6 6 0 000-12z"></path></svg>
+                            <div class="relative z-10"><h4 class="text-[14px] text-white font-medium truncate">社交 App 交互流</h4><p class="text-[10px] text-purple-300/50 mt-1">昨天 14:30 修改</p></div>
+                        </div>
+                        <div class="min-w-[180px] h-[100px] rounded-[12px] bg-gradient-to-br from-purple-900/60 to-purple-800/30 backdrop-blur-md border border-purple-500/20 p-3 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-purple-400/50 transition-all">
+                            <div class="absolute inset-0 tech-grid"></div>
+                            <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(168,85,247,0.1),_transparent)]"></div>
+                            <svg class="w-5 h-5 text-purple-400/50 mb-auto relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <div class="relative z-10"><h4 class="text-[14px] text-white font-medium truncate">SaaS 官网视觉稿</h4><p class="text-[10px] text-purple-300/50 mt-1">3 天前修改</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 返回按钮（左下角）- 返回模板库 -->
+    <div class="fixed bottom-[24px] left-[24px] z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-purple-500/30 cursor-pointer hover:bg-purple-500/20 transition-all duration-300 group" id="backBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        <span class="text-sm text-purple-300 group-hover:text-white">返回模板库</span>
+    </div>
+
+    <!-- 智能助手悬浮球 -->
+    <div class="fixed bottom-[80px] right-[80px] w-[110px] h-[110px] z-20 cursor-pointer" id="aiAssistant">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%; overflow:visible">
+            <defs>
+                <filter id="ai-core-glow"><feGaussianBlur stdDeviation="7.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+                <filter id="ai-particle-glow"><feGaussianBlur stdDeviation="2" /></filter>
+                <linearGradient id="ai-orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.2" />
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="15" fill="#a855f7" filter="url(#ai-core-glow)" class="ai-pulse-glow" />
+            <g class="ai-orbit-1">
+                <ellipse cx="60" cy="60" rx="45" ry="15" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(30 60 60)" />
+                <ellipse cx="60" cy="60" rx="55" ry="12" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(90 60 60)" opacity="0.7" />
+            </g>
+            <g class="ai-orbit-2">
+                <ellipse cx="60" cy="60" rx="50" ry="18" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1.5" transform="rotate(150 60 60)" />
+                <ellipse cx="60" cy="60" rx="40" ry="25" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(210 60 60)" opacity="0.6" />
+            </g>
+            <g class="ai-orbit-3">
+                <ellipse cx="60" cy="60" rx="58" ry="10" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1" transform="rotate(60 60 60)" opacity="0.9" />
+                <ellipse cx="60" cy="60" rx="35" ry="30" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(120 60 60)" opacity="0.5" />
+            </g>
+            <path d="M60,60 L60,10" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-1" />
+            <path d="M60,60 L103,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-2" />
+            <path d="M60,60 L17,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-3" />
+            <g class="ai-orbit-1"><circle cx="60" cy="10" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="60" cy="10" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-2"><circle cx="103" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="103" cy="85" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-3"><circle cx="17" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="17" cy="85" r="1.5" fill="#fff" /></g>
+        </svg>
+        <div class="ai-assistant-tooltip" style="position: absolute; right: 120px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 20px; font-size: 12px; color: white; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none;">AI 设计助手</div>
+    </div>
+
+    <!-- 智能助手弹窗模态框 -->
+    <div id="aiModal" class="ai-modal" style="display: none;">
+        <div class="ai-modal-overlay"></div>
+        <div class="ai-modal-container">
+            <div class="ai-modal-header">
+                <div class="ai-modal-title">
+                    <div class="ai-modal-icon">
+                        <svg width="28" height="28" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="60" cy="60" r="15" fill="#a855f7" />
+                            <circle cx="60" cy="60" r="45" ry="15" fill="none" stroke="#d8b4fe" stroke-width="1.5" transform="rotate(30 60 60)" opacity="0.6"/>
+                            <circle cx="60" cy="60" r="50" ry="18" fill="none" stroke="#d8b4fe" stroke-width="1" transform="rotate(150 60 60)" opacity="0.4"/>
+                        </svg>
+                    </div>
+                    <span>AI 设计助手</span>
+                </div>
+                <button class="ai-modal-close" id="aiModalClose">&times;</button>
+            </div>
+            <div class="ai-modal-body">
+                <p class="ai-greeting">👋 你好！我是你的专属设计助手</p>
+                <p class="ai-desc">我可以帮你完成以下设计任务：</p>
+                <ul class="ai-features">
+                    <li>🎯 <strong>问题分析</strong> - 深入挖掘用户痛点，定义核心设计问题</li>
+                    <li>💡 <strong>创意生成</strong> - 基于需求快速生成多维度设计方案</li>
+                    <li>📊 <strong>方案评估</strong> - 多维度评估方案可行性，辅助决策</li>
+                    <li>🔄 <strong>流程优化</strong> - 推荐最佳设计流程，提升工作效率</li>
+                    <li>📝 <strong>内容建议</strong> - 为每个节点提供专业的内容填写建议</li>
+                    <li>🔍 <strong>设计检查</strong> - 审查设计逻辑，发现潜在问题</li>
+                </ul>
+                <div class="ai-input-area">
+                    <textarea id="aiQuestionInput" placeholder="输入你的问题，例如：如何定义用户痛点？..." rows="3"></textarea>
+                    <button class="ai-send-btn" id="aiSendBtn">发送消息</button>
+                </div>
+                <p class="ai-tip">💡 提示：发送问题后，助手将为你提供专业建议</p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .ai-assistant:hover .ai-assistant-tooltip { opacity: 1; }
+        
+        /* 智能助手弹窗样式 */
+        .ai-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1001;
+        }
+        .ai-modal-container {
+            position: relative;
+            z-index: 1002;
+            width: 500px;
+            max-width: 90%;
+            background: linear-gradient(135deg, rgba(25, 20, 45, 0.98), rgba(15, 12, 30, 0.98));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.2);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .ai-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .ai-modal-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #c084fc;
+        }
+        .ai-modal-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+        .ai-modal-close {
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+            padding: 0 8px;
+        }
+        .ai-modal-close:hover {
+            color: #c084fc;
+            transform: scale(1.1);
+        }
+        .ai-modal-body {
+            padding: 24px;
+        }
+        .ai-greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 16px;
+        }
+        .ai-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 16px;
+        }
+        .ai-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px 0;
+        }
+        .ai-features li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ai-features li strong {
+            color: #c084fc;
+            font-weight: 600;
+        }
+        .ai-input-area {
+            margin-top: 20px;
+        }
+        .ai-input-area textarea {
+            width: 100%;
+            background: rgba(20, 15, 35, 0.8);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 13px;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.2s;
+        }
+        .ai-input-area textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+        .ai-input-area textarea::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        .ai-send-btn {
+            margin-top: 12px;
+            width: 100%;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            border-radius: 40px;
+            padding: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ai-send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+        }
+        .ai-tip {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 16px;
+            text-align: center;
+        }
+    </style>
+
+    <script>
+        // 返回按钮跳转 - 返回模板库
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.location.href = 'templates.html';
+        });
+        
+        // 三个创建方式的跳转
+        document.getElementById('aiChatBtn').addEventListener('click', function() {
+            window.location.href = 'ai-chat.html';
+        });
+        document.getElementById('templateBtn').addEventListener('click', function() {
+            window.location.href = 'templates.html';
+        });
+        document.getElementById('freeCreateBtn').addEventListener('click', function() {
+            window.location.href = 'free-create.html';
+        });
+        
+        // 左侧快捷入口跳转（模板库快捷入口）
+        const quickBtns = document.querySelectorAll('[data-template-type]');
+        quickBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                window.location.href = 'templates.html';
+            });
+        });
+        
+        // 最近项目点击提示
+        document.querySelectorAll('.min-w-\\[180px\\]').forEach(item => {
+            item.addEventListener('click', function() {
+                alert('📁 打开项目功能开发中，敬请期待！');
+            });
+        });
+        
+        // 新建项目按钮
+        document.querySelector('.bg-gradient-to-r.from-purple-600.to-purple-500').addEventListener('click', function() {
+            window.location.href = 'free-create.html';
+        });
+        
+        // ========== 智能助手弹窗逻辑 ==========
+        const aiAssistant = document.getElementById('aiAssistant');
+        const aiModal = document.getElementById('aiModal');
+        const aiModalClose = document.getElementById('aiModalClose');
+        const aiSendBtn = document.getElementById('aiSendBtn');
+        const aiQuestionInput = document.getElementById('aiQuestionInput');
+        
+        // 打开弹窗
+        if (aiAssistant && aiModal) {
+            aiAssistant.addEventListener('click', function(e) {
+                e.stopPropagation();
+                aiModal.style.display = 'flex';
+            });
+        }
+        
+        // 关闭弹窗（点击关闭按钮）
+        if (aiModalClose) {
+            aiModalClose.addEventListener('click', function() {
+                aiModal.style.display = 'none';
+            });
+        }
+        
+        // 关闭弹窗（点击遮罩层）
+        const overlay = document.querySelector('.ai-modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                aiModal.style.display = 'none';
+            });
+        }
+        
+        // 发送消息功能
+        if (aiSendBtn && aiQuestionInput) {
+            aiSendBtn.addEventListener('click', function() {
+                const message = aiQuestionInput.value.trim();
+                if (message) {
+                    // 模拟AI回复
+                    const responses = [
+                        `🤖 关于「${message}」\n\n这是一个很好的问题！在DesignScope中，你可以：\n\n1. 使用「模板创建」选择专业设计流程\n2. 使用「AI对话创建」与我直接对话\n3. 参考模板中的节点内容和标签建议\n\n试试看，我会一直在这里帮你！`,
+                        `🤖 收到你的问题：「${message}」\n\n设计建议：\n• 先明确核心用户和场景\n• 然后使用亲和图整理痛点\n• 最后通过HMW方法转化为设计机会\n\n需要我详细解释某个步骤吗？`,
+                        `🤖 关于「${message}」\n\n💡 我的建议：\n\n第一步：从左侧模板库选择一个合适的框架\n第二步：填写每个节点的内容（点击卡片即可编辑）\n第三步：使用右侧属性检查器调整细节\n第四步：点击「导出成果」保存你的设计\n\n有什么具体问题可以继续问我！`,
+                        `🤖 感谢你的提问！「${message}」\n\n✨ 设计小贴士：\n\n好的设计往往来自对用户的深入理解。建议你先完成「用户调研」和「痛点分析」节点，这些是设计的基础。\n\n加油，期待看到你的作品！`
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    alert(randomResponse);
+                    aiQuestionInput.value = '';
+                } else {
+                    alert('🤖 请输入你的问题，我会尽力帮你解答！\n\n例如：如何定义用户痛点？');
+                }
+            });
+        }
+        
+        // 按回车发送（Ctrl+Enter 或 Cmd+Enter）
+        if (aiQuestionInput) {
+            aiQuestionInput.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    aiSendBtn.click();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

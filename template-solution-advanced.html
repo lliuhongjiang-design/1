@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DesignScope - 解决方案驱动设计（高级）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.4);
+            border-radius: 3px;
+        }
+
+        /* 智能助手动画 */
+        @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes reverse-orbit { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.4; filter: blur(25px); } 50% { opacity: 0.8; filter: blur(35px); } }
+        .ai-orbit-1 { animation: orbit 20s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-2 { animation: reverse-orbit 25s linear infinite; transform-origin: 60px 60px; }
+        .ai-orbit-3 { animation: orbit 30s linear infinite; transform-origin: 60px 60px; }
+        .ai-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="bg-layer">
+        <div class="glow-spot glow-1"></div>
+        <div class="glow-spot glow-2"></div>
+        <div class="glow-spot glow-3"></div>
+    </div>
+
+    <div class="app-container">
+        
+        <header class="top-navbar">
+            <div class="nav-left" id="backToTemplates">
+                <div class="logo-icon">D</div>
+                <span class="logo-text">DesignScope</span>
+            </div>
+            <div class="nav-center">
+                <span class="page-title">设计模板库</span>
+            </div>
+            <div class="nav-right">
+                <div class="search-box">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+                    <span class="search-placeholder">搜索组件、模板或灵感。</span>
+                </div>
+                <div class="zoom-control">缩放100%</div>
+                <div class="action-icons">
+                    <svg class="action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                    <svg class="action-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </div>
+                <div class="user-avatar"></div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            
+            <aside class="sidebar">
+                <button class="create-project-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    创建新项目
+                </button>
+                <div class="sidebar-section">
+                    <div class="section-title">模板分类</div>
+                    <div class="category-item">问题驱动设计</div>
+                    <div class="category-item active">解决方案驱动设计</div>
+                    <div class="category-item">双钻模型</div>
+                </div>
+                <!-- 快捷操作区域 -->
+                <div class="sidebar-section quick-actions">
+                    <div class="section-title">快捷操作</div>
+                    <div class="quick-btn" id="versionHistoryBtn">📜 版本历史</div>
+                    <div class="quick-btn" id="exportPageBtn">📤 导出项目</div>
+                </div>
+                <div class="sidebar-section bottom">
+                    <div class="section-title">最近使用</div>
+                    <div class="recent-item">AI智能硬件创新设计</div>
+                    <div class="recent-item">技术驱动产品路线图</div>
+                </div>
+            </aside>
+
+            <main class="canvas-area">
+                <div class="canvas-header">
+                    <div class="template-title-section">
+                        <div class="difficulty-badge">高级</div>
+                        <div class="category-badge">解决方案驱动设计</div>
+                    </div>
+                    <div class="canvas-actions">
+                        <span class="zoom-text" id="zoomInBtn">+ 放大</span>
+                        <span class="zoom-text" id="zoomOutBtn">- 缩小</span>
+                        <div class="divider"></div>
+                        <span class="share-text" id="shareBtn">分享</span>
+                        <span class="export-text" id="exportBtnTop">导出成果</span>
+                    </div>
+                </div>
+                <div class="canvas-description">
+                    🚀 解决方案驱动 · 高级 | 从核心技术出发，通过矛盾分析、系统化创新和原型验证，适用于技术驱动或突破性创新项目。共13个节点。
+                </div>
+                
+                <div class="graph-container" id="graphContainer">
+                    <svg class="lines-svg" id="linesSvg"></svg>
+                    <div class="nodes-container" id="nodesContainer">
+                        
+                        <!-- 第一层：核心技术节点 -->
+                        <div class="node-card node-core-tech" id="coreTech" style="left: 20px; top: 250px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header">
+                                <div class="node-icon tech-icon"></div>
+                                <span class="node-title">核心技术</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">技术名称：</span><span class="preview-value">低功耗蓝牙 + 微型传感器</span></div>
+                                <div class="preview-line"><span class="preview-label">原理论述：</span><span class="preview-value">通过BLE 5.0实现设备与手机低功耗通信</span></div>
+                                <div class="preview-line"><span class="preview-label">成熟度评估：</span><span class="preview-value">商用成熟，已有大量案例</span></div>
+                                <div class="preview-line"><span class="preview-label">技术优势：</span><span class="preview-value">功耗低、连接稳定、开发成本可控</span></div>
+                                <div class="preview-line"><span class="preview-label">局限性：</span><span class="preview-value">传输距离有限、穿墙能力弱</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">创新源头</span><span class="tag">技术核心</span></div>
+                        </div>
+
+                        <!-- 第二层：五个创新方向节点 -->
+                        <div class="node-card node-direction" id="dir1" style="left: 350px; top: 30px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon conflict-icon"></div><span class="node-title">矛盾分析</span></div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">技术矛盾：</span><span class="preview-value">功能丰富 vs 功耗控制</span></div>
+                                <div class="preview-line"><span class="preview-label">物理矛盾：</span><span class="preview-value">需要大电池 vs 产品小巧</span></div>
+                                <div class="preview-line"><span class="preview-label">矛盾矩阵：</span><span class="preview-value">TRIZ 40条原理应用</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">TRIZ分析</span></div>
+                        </div>
+
+                        <div class="node-card node-direction" id="dir2" style="left: 350px; top: 150px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon function-icon"></div><span class="node-title">功能映射</span></div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">功能需求：</span><span class="preview-value">饮水提醒、数据记录、健康监测</span></div>
+                                <div class="preview-line"><span class="preview-label">功能-技术映射：</span><span class="preview-value">传感器→水位检测/灯光→提醒</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">功能分析</span></div>
+                        </div>
+
+                        <div class="node-card node-direction" id="dir3" style="left: 350px; top: 270px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon trend-icon"></div><span class="node-title">技术进化趋势</span></div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">进化曲线分析：</span><span class="preview-value">智能硬件S曲线中段</span></div>
+                                <div class="preview-line"><span class="preview-label">下一代方向：</span><span class="preview-value">无感交互+AI推荐</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">趋势洞察</span></div>
+                        </div>
+
+                        <div class="node-card node-direction" id="dir4" style="left: 350px; top: 390px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon resource-icon"></div><span class="node-title">资源分析</span></div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">可用资源：</span><span class="preview-value">现有BLE芯片、开源SDK</span></div>
+                                <div class="preview-line"><span class="preview-label">资源利用方案：</span><span class="preview-value">复用手机端算力</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">资源盘点</span></div>
+                        </div>
+
+                        <div class="node-card node-direction" id="dir5" style="left: 350px; top: 510px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon ideal-icon"></div><span class="node-title">理想最终结果</span></div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">理想解描述：</span><span class="preview-value">无需用户干预的智能饮水伴侣</span></div>
+                                <div class="preview-line"><span class="preview-label">障碍分析：</span><span class="preview-value">成本、续航、用户习惯</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">IFR</span></div>
+                        </div>
+
+                        <!-- 第三层：主方案节点 -->
+                        <div class="node-card node-main-solution" id="mainSolution" style="left: 720px; top: 280px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header">
+                                <div class="node-icon main-icon"></div>
+                                <span class="node-title">主方案</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">方案核心：</span><span class="preview-value">智能灯光水杯系统</span></div>
+                                <div class="preview-line"><span class="preview-label">技术架构：</span><span class="preview-value">传感器+LED+蓝牙+App</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">核心概念</span><span class="tag">方案聚合</span></div>
+                        </div>
+
+                        <!-- 第四层：五个子方案节点 -->
+                        <div class="node-card node-sub" id="sub1" style="left: 1000px; top: 50px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon sub-icon"></div><span class="node-title">技术路径A</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">方案描述：</span><span class="preview-value">单色灯环+震动提醒</span></div></div>
+                            <div class="node-tags"><span class="tag">低成本方案</span></div>
+                        </div>
+                        <div class="node-card node-sub" id="sub2" style="left: 1000px; top: 150px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon sub-icon"></div><span class="node-title">技术路径B</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">方案描述：</span><span class="preview-value">全彩LED+流动光效</span></div></div>
+                            <div class="node-tags"><span class="tag">推荐方案</span></div>
+                        </div>
+                        <div class="node-card node-sub" id="sub3" style="left: 1000px; top: 250px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon sub-icon"></div><span class="node-title">技术路径C</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">方案描述：</span><span class="preview-value">OLED屏幕显示</span></div></div>
+                            <div class="node-tags"><span class="tag">高成本方案</span></div>
+                        </div>
+                        <div class="node-card node-sub" id="sub4" style="left: 1000px; top: 350px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon sub-icon"></div><span class="node-title">技术路径D</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">方案描述：</span><span class="preview-value">语音交互提醒</span></div></div>
+                            <div class="node-tags"><span class="tag">语音方案</span></div>
+                        </div>
+                        <div class="node-card node-sub" id="sub5" style="left: 1000px; top: 450px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header"><div class="node-icon sub-icon"></div><span class="node-title">技术路径E</span></div>
+                            <div class="node-preview"><div class="preview-line"><span class="preview-label">方案描述：</span><span class="preview-value">全息投影显示</span></div></div>
+                            <div class="node-tags"><span class="tag">前沿探索</span></div>
+                        </div>
+
+                        <!-- 第五层：方案评估矩阵 -->
+                        <div class="node-card node-matrix" id="matrix" style="left: 1320px; top: 220px;">
+                            <div class="node-gradient-bar"></div>
+                            <div class="node-header">
+                                <div class="node-icon matrix-icon"></div>
+                                <span class="node-title">方案评估矩阵</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-line"><span class="preview-label">评估维度：</span><span class="preview-value">技术可行性/用户体验/成本</span></div>
+                                <div class="preview-line"><span class="preview-label">路径A得分：</span><span class="preview-value">8/7/9 → 总分24</span></div>
+                                <div class="preview-line"><span class="preview-label">路径B得分：</span><span class="preview-value">9/9/7 → 总分25</span></div>
+                                <div class="preview-line"><span class="preview-label">路径C得分：</span><span class="preview-value">7/8/6 → 总分21</span></div>
+                                <div class="preview-line"><span class="preview-label">路径D得分：</span><span class="preview-value">6/7/5 → 总分18</span></div>
+                                <div class="preview-line"><span class="preview-label">路径E得分：</span><span class="preview-value">4/9/3 → 总分16</span></div>
+                                <div class="preview-line"><span class="preview-label">✅ 最终选择：</span><span class="preview-value">技术路径B（全彩LED+流动光效）</span></div>
+                            </div>
+                            <div class="node-tags"><span class="tag">决策阶段</span><span class="tag">PUGH矩阵</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="canvas-footer">
+                    <span>✨ 共13个节点 | 核心技术 → 创新方向 → 方案聚合 → 多路径 → 评估决策 | 适合技术驱动型项目</span>
+                </div>
+            </main>
+
+            <aside class="inspector">
+                <div class="inspector-header">属性检查器</div>
+                <div class="inspector-content" id="inspectorContent">
+                    <div class="inspector-section">
+                        <div class="section-label">当前选中节点</div>
+                        <div class="info-row"><span class="info-label">节点类型</span><span class="info-value" id="inspectorType">方案评估矩阵</span></div>
+                        <div class="info-row"><span class="info-label">节点ID</span><span class="info-value" id="inspectorId">S015</span></div>
+                        <div class="info-row"><span class="info-label">创建时间</span><span class="info-value">2025-05-06</span></div>
+                        <div class="info-row"><span class="info-label">所属阶段</span><span class="info-value" id="inspectorPhase">决策阶段</span></div>
+                    </div>
+                    <div class="divider-line"></div>
+                    <div class="inspector-section">
+                        <div class="section-label">修改记录</div>
+                        <div class="history-item">
+                            <div class="history-avatar"></div>
+                            <div class="history-text"><span class="history-name">John Doe</span><span class="history-action">更新了评估矩阵得分</span></div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-avatar"></div>
+                            <div class="history-text"><span class="history-name">Jane Smith</span><span class="history-action">添加了技术路径E</span></div>
+                        </div>
+                    </div>
+                    <div class="divider-line"></div>
+                    <div class="inspector-section">
+                        <div class="section-label">线条 & 样式</div>
+                        <div class="setting-row"><span>连接线粗细</span><span>2.5px (贝塞尔曲线)</span></div>
+                        <div class="setting-row"><span>辉光颜色</span><div class="color-preview"></div></div>
+                        <div class="setting-row"><span>连线逻辑</span><span>核心技术→5方向→主方案→5路径→评估</span></div>
+                    </div>
+                </div>
+                <button class="upgrade-btn">✨ 升级专业版</button>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 底部快捷按钮栏 -->
+    <div class="bottom-actions">
+        <div class="action-btn" id="versionBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v16h16V4H4z"/><polyline points="8 10 12 14 16 10"/></svg>
+            版本历史
+        </div>
+        <div class="action-btn" id="exportBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v12m-4-4l4 4 4-4"/><path d="M4 16v4h16v-4"/></svg>
+            导出项目
+        </div>
+        <div class="action-btn" id="backBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+            返回模板库
+        </div>
+    </div>
+
+    <!-- 智能助手悬浮球 -->
+    <div class="ai-assistant" id="aiAssistant">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="ai-core-glow"><feGaussianBlur stdDeviation="7.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+                <filter id="ai-particle-glow"><feGaussianBlur stdDeviation="2" /></filter>
+                <linearGradient id="ai-orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.2" />
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="15" fill="#a855f7" filter="url(#ai-core-glow)" class="ai-pulse-glow" />
+            <g class="ai-orbit-1">
+                <ellipse cx="60" cy="60" rx="45" ry="15" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(30 60 60)" />
+                <ellipse cx="60" cy="60" rx="55" ry="12" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(90 60 60)" opacity="0.7" />
+            </g>
+            <g class="ai-orbit-2">
+                <ellipse cx="60" cy="60" rx="50" ry="18" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1.5" transform="rotate(150 60 60)" />
+                <ellipse cx="60" cy="60" rx="40" ry="25" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(210 60 60)" opacity="0.6" />
+            </g>
+            <g class="ai-orbit-3">
+                <ellipse cx="60" cy="60" rx="58" ry="10" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="1" transform="rotate(60 60 60)" opacity="0.9" />
+                <ellipse cx="60" cy="60" rx="35" ry="30" fill="none" stroke="url(#ai-orbit-grad)" stroke-width="2" transform="rotate(120 60 60)" opacity="0.5" />
+            </g>
+            <path d="M60,60 L60,10" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-1" />
+            <path d="M60,60 L103,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-2" />
+            <path d="M60,60 L17,85" fill="none" stroke="#d8b4fe" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.3" class="ai-orbit-3" />
+            <g class="ai-orbit-1"><circle cx="60" cy="10" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="60" cy="10" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-2"><circle cx="103" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="103" cy="85" r="1.5" fill="#fff" /></g>
+            <g class="ai-orbit-3"><circle cx="17" cy="85" r="2" fill="#a855f7" filter="url(#ai-particle-glow)" /><circle cx="17" cy="85" r="1.5" fill="#fff" /></g>
+        </svg>
+        <div class="ai-assistant-tooltip">AI 设计助手</div>
+    </div>
+
+    <style>
+        .bg-layer {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 80%, #1a0b2e 0%, #050505 100%);
+            z-index: 0;
+            overflow: hidden;
+        }
+        .glow-spot {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+        }
+        .glow-1 { width: 600px; height: 600px; background: #8b5cf6; bottom: -200px; left: -100px; }
+        .glow-2 { width: 500px; height: 500px; background: #06b6d4; top: -100px; right: -100px; opacity: 0.3; }
+        .glow-3 { width: 400px; height: 400px; background: #ec4899; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; }
+        .app-container { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; background: rgba(10, 10, 20, 0.3); }
+        
+        .top-navbar {
+            height: 64px;
+            background: rgba(15, 15, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; }
+        .logo-text { font-size: 18px; font-weight: 600; color: white; }
+        .nav-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .page-title { font-size: 16px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+        .search-box { display: flex; align-items: center; gap: 8px; background: rgba(30, 30, 50, 0.5); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 24px; padding: 8px 16px; }
+        .search-icon { color: rgba(139, 92, 246, 0.7); }
+        .search-placeholder { font-size: 13px; color: rgba(255, 255, 255, 0.4); }
+        .zoom-control { font-size: 13px; color: rgba(255, 255, 255, 0.6); background: rgba(30, 30, 50, 0.5); padding: 6px 12px; border-radius: 20px; }
+        .action-icons { display: flex; gap: 8px; }
+        .action-icon { color: rgba(255, 255, 255, 0.5); cursor: pointer; }
+        .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; }
+        
+        .main-layout { flex: 1; display: flex; overflow: hidden; }
+        
+        .sidebar { width: 260px; background: rgba(15, 15, 25, 0.5); backdrop-filter: blur(8px); border-right: 1px solid rgba(139, 92, 246, 0.15); display: flex; flex-direction: column; padding: 20px 16px; }
+        .create-project-btn { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 28px; padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; color: white; font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 24px; transition: all 0.2s; }
+        .create-project-btn:hover { background: rgba(139, 92, 246, 0.3); border-color: rgba(139, 92, 246, 0.6); }
+        .sidebar-section { margin-bottom: 32px; }
+        .quick-actions { margin-bottom: 20px; }
+        .quick-btn {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            text-align: center;
+            font-size: 12px;
+            color: #a78bfa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover { background: rgba(139, 92, 246, 0.3); transform: translateX(4px); }
+        .sidebar-section.bottom { margin-top: auto; }
+        .section-title { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.5px; margin-bottom: 12px; padding-left: 8px; }
+        .category-item { padding: 10px 12px; margin: 4px 0; border-radius: 12px; font-size: 14px; color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s; }
+        .category-item.active { background: rgba(139, 92, 246, 0.25); color: white; }
+        .recent-item { padding: 8px 12px; font-size: 13px; color: rgba(255, 255, 255, 0.5); border-radius: 8px; cursor: pointer; }
+        .recent-item:hover { background: rgba(139, 92, 246, 0.1); }
+        
+        .canvas-area { flex: 1; display: flex; flex-direction: column; padding: 20px 24px; background: rgba(10, 10, 20, 0.4); overflow-x: auto; overflow-y: auto; }
+        .canvas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .template-title-section { display: flex; gap: 12px; }
+        .difficulty-badge { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #a78bfa; }
+        .category-badge { background: rgba(139, 92, 246, 0.15); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: rgba(255, 255, 255, 0.7); }
+        .canvas-actions { display: flex; align-items: center; gap: 12px; }
+        .zoom-text, .share-text, .export-text { font-size: 13px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
+        .divider { width: 1px; height: 16px; background: rgba(255, 255, 255, 0.2); }
+        .canvas-description { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-bottom: 30px; padding-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.15); }
+        
+        .graph-container { position: relative; flex: 1; min-height: 650px; overflow-x: auto; }
+        .lines-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .nodes-container { position: relative; width: 1600px; height: 650px; z-index: 10; transition: transform 0.2s ease; transform-origin: 0 0; }
+        
+        .node-card {
+            position: absolute;
+            background: rgba(25, 20, 40, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s;
+            overflow: hidden;
+            cursor: pointer;
+            z-index: 20;
+            width: 280px;
+        }
+        .node-card.selected-node {
+            border: 2px solid #c084fc;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.5), 0 12px 28px -8px black;
+            transform: scale(1.01);
+            background: rgba(45, 35, 70, 0.95);
+        }
+        .node-card:hover {
+            border-color: rgba(139, 92, 246, 0.9);
+            transform: translateY(-2px);
+            background: rgba(35, 28, 55, 0.9);
+        }
+        .node-gradient-bar { height: 4px; background: linear-gradient(90deg, #06b6d4, #8b5cf6, #ec4899); width: 100%; }
+        .node-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px 0 16px; }
+        .node-icon { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; }
+        .tech-icon { background: linear-gradient(135deg, #a855f7, #ec4899); }
+        .conflict-icon { background: linear-gradient(135deg, #ef4444, #f97316); }
+        .function-icon { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .trend-icon { background: linear-gradient(135deg, #06b6d4, #2dd4bf); }
+        .resource-icon { background: linear-gradient(135deg, #10b981, #34d399); }
+        .ideal-icon { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .main-icon { background: linear-gradient(135deg, #8b5cf6, #c084fc); }
+        .sub-icon { background: linear-gradient(135deg, #14b8a6, #5eead4); }
+        .matrix-icon { background: linear-gradient(135deg, #f97316, #ef4444); }
+        .node-title { font-size: 14px; font-weight: 600; color: white; }
+        .node-preview { padding: 12px 16px; }
+        .preview-line { font-size: 10px; margin-bottom: 5px; line-height: 1.4; }
+        .preview-label { color: rgba(139, 92, 246, 0.7); }
+        .preview-value { color: rgba(255, 255, 255, 0.7); }
+        .node-tags { padding: 8px 16px 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { background: rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 2px 8px; font-size: 9px; color: #c084fc; }
+        
+        .canvas-footer { text-align: center; padding-top: 20px; font-size: 12px; color: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(139, 92, 246, 0.15); margin-top: 16px; }
+        
+        .inspector { width: 280px; background: rgba(15, 15, 25, 0.6); backdrop-filter: blur(12px); border-left: 1px solid rgba(139, 92, 246, 0.15); display: flex; flex-direction: column; padding: 20px 16px; }
+        .inspector-header { font-size: 16px; font-weight: 600; color: white; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
+        .inspector-content { flex: 1; }
+        .inspector-section { margin-bottom: 20px; }
+        .section-label { font-size: 12px; font-weight: 600; color: rgba(139, 92, 246, 0.8); margin-bottom: 12px; letter-spacing: 0.5px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .info-label { color: rgba(255, 255, 255, 0.5); }
+        .info-value { color: rgba(255, 255, 255, 0.8); }
+        .divider-line { height: 1px; background: rgba(139, 92, 246, 0.15); margin: 16px 0; }
+        .history-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+        .history-avatar { width: 28px; height: 28px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); border-radius: 50%; }
+        .history-text { flex: 1; }
+        .history-name { font-size: 12px; font-weight: 500; color: white; display: block; }
+        .history-action { font-size: 10px; color: rgba(255, 255, 255, 0.5); }
+        .setting-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+        .color-preview { width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(90deg, #06b6d4, #8b5cf6); }
+        .upgrade-btn { background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; border-radius: 28px; padding: 12px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 20px; transition: all 0.2s; }
+        .upgrade-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4); }
+        
+        /* 底部按钮栏 */
+        .bottom-actions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
+            z-index: 150;
+        }
+        .action-btn {
+            background: rgba(15, 15, 25, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 40px;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #a78bfa;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: rgba(139, 92, 246, 0.3); transform: translateY(-2px); border-color: rgba(139, 92, 246, 0.7); }
+        .action-btn svg { stroke: #a78bfa; }
+        
+        /* 智能助手 */
+        .ai-assistant {
+            position: fixed;
+            bottom: 80px;
+            right: 80px;
+            width: 110px;
+            height: 110px;
+            z-index: 200;
+            cursor: pointer;
+        }
+        .ai-assistant svg { width: 100%; height: 100%; overflow: visible; }
+        .ai-assistant-tooltip {
+            position: absolute;
+            right: 120px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .ai-assistant:hover .ai-assistant-tooltip { opacity: 1; }
+    </style>
+
+    <script>
+        function drawLines() {
+            const svg = document.getElementById('linesSvg');
+            const container = document.querySelector('.graph-container');
+            if (!svg || !container) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            if (containerRect.width === 0) return;
+            
+            function getNodeBounds(el) {
+                const rect = el.getBoundingClientRect();
+                return { 
+                    right: rect.right - containerRect.left, 
+                    left: rect.left - containerRect.left, 
+                    centerY: (rect.top + rect.bottom) / 2 - containerRect.top,
+                    top: rect.top - containerRect.top, 
+                    bottom: rect.bottom - containerRect.top 
+                };
+            }
+            
+            const tech = document.getElementById('coreTech');
+            const d1 = document.getElementById('dir1'), d2 = document.getElementById('dir2'), d3 = document.getElementById('dir3'), d4 = document.getElementById('dir4'), d5 = document.getElementById('dir5');
+            const main = document.getElementById('mainSolution');
+            const s1 = document.getElementById('sub1'), s2 = document.getElementById('sub2'), s3 = document.getElementById('sub3'), s4 = document.getElementById('sub4'), s5 = document.getElementById('sub5');
+            const mat = document.getElementById('matrix');
+            
+            if (!tech || !d1 || !d2 || !d3 || !d4 || !d5 || !main || !s1 || !s2 || !s3 || !s4 || !s5 || !mat) return;
+            
+            const bTech = getNodeBounds(tech);
+            const bD1 = getNodeBounds(d1), bD2 = getNodeBounds(d2), bD3 = getNodeBounds(d3), bD4 = getNodeBounds(d4), bD5 = getNodeBounds(d5);
+            const bMain = getNodeBounds(main);
+            const bS1 = getNodeBounds(s1), bS2 = getNodeBounds(s2), bS3 = getNodeBounds(s3), bS4 = getNodeBounds(s4), bS5 = getNodeBounds(s5);
+            const bMat = getNodeBounds(mat);
+            
+            const connections = [
+                { x1: bTech.right, y1: bTech.centerY - 40, x2: bD1.left, y2: bD1.centerY },
+                { x1: bTech.right, y1: bTech.centerY - 20, x2: bD2.left, y2: bD2.centerY },
+                { x1: bTech.right, y1: bTech.centerY, x2: bD3.left, y2: bD3.centerY },
+                { x1: bTech.right, y1: bTech.centerY + 20, x2: bD4.left, y2: bD4.centerY },
+                { x1: bTech.right, y1: bTech.centerY + 40, x2: bD5.left, y2: bD5.centerY },
+                { x1: bD1.right, y1: bD1.centerY, x2: bMain.left, y2: bMain.centerY - 40 },
+                { x1: bD2.right, y1: bD2.centerY, x2: bMain.left, y2: bMain.centerY - 20 },
+                { x1: bD3.right, y1: bD3.centerY, x2: bMain.left, y2: bMain.centerY },
+                { x1: bD4.right, y1: bD4.centerY, x2: bMain.left, y2: bMain.centerY + 20 },
+                { x1: bD5.right, y1: bD5.centerY, x2: bMain.left, y2: bMain.centerY + 40 },
+                { x1: bMain.right, y1: bMain.centerY - 60, x2: bS1.left, y2: bS1.centerY },
+                { x1: bMain.right, y1: bMain.centerY - 30, x2: bS2.left, y2: bS2.centerY },
+                { x1: bMain.right, y1: bMain.centerY, x2: bS3.left, y2: bS3.centerY },
+                { x1: bMain.right, y1: bMain.centerY + 30, x2: bS4.left, y2: bS4.centerY },
+                { x1: bMain.right, y1: bMain.centerY + 60, x2: bS5.left, y2: bS5.centerY },
+                { x1: bS1.right, y1: bS1.centerY, x2: bMat.left, y2: bMat.centerY - 60 },
+                { x1: bS2.right, y1: bS2.centerY, x2: bMat.left, y2: bMat.centerY - 30 },
+                { x1: bS3.right, y1: bS3.centerY, x2: bMat.left, y2: bMat.centerY },
+                { x1: bS4.right, y1: bS4.centerY, x2: bMat.left, y2: bMat.centerY + 30 },
+                { x1: bS5.right, y1: bS5.centerY, x2: bMat.left, y2: bMat.centerY + 60 }
+            ];
+            
+            let pathsHtml = `<defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#06b6d4" stop-opacity="0.9"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.9"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+            
+            connections.forEach(conn => {
+                const dx = conn.x2 - conn.x1;
+                const cp1x = conn.x1 + dx * 0.5;
+                const cp1y = conn.y1;
+                const cp2x = conn.x2 - dx * 0.3;
+                const cp2y = conn.y2;
+                pathsHtml += `<path d="M ${conn.x1} ${conn.y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${conn.x2} ${conn.y2}" stroke="url(#grad1)" stroke-width="2.5" fill="none" filter="url(#glow)"/>`;
+            });
+            
+            svg.innerHTML = pathsHtml;
+        }
+        
+        // 节点选中高亮
+        let currentSelectedCard = null;
+        function selectNode(card) {
+            if(currentSelectedCard) currentSelectedCard.classList.remove('selected-node');
+            card.classList.add('selected-node');
+            currentSelectedCard = card;
+            const titleElem = card.querySelector('.node-title')?.innerText || '节点';
+            const nodeId = card.id;
+            const tags = card.querySelectorAll('.tag');
+            const phase = tags.length > 0 ? tags[0].innerText : '设计阶段';
+            document.getElementById('inspectorType').innerText = titleElem;
+            document.getElementById('inspectorId').innerText = nodeId.toUpperCase();
+            document.getElementById('inspectorPhase').innerText = phase;
+        }
+        
+        // 缩放功能
+        let currentZoom = 100;
+        const nodesContainer = document.getElementById('nodesContainer');
+        function applyZoom() {
+            const scale = currentZoom / 100;
+            nodesContainer.style.transform = `scale(${scale})`;
+            nodesContainer.style.transformOrigin = '0 0';
+            setTimeout(() => drawLines(), 60);
+        }
+        
+        window.addEventListener('load', () => { 
+            setTimeout(drawLines, 200); 
+            setTimeout(drawLines, 500);
+            // 默认选中矩阵节点
+            setTimeout(() => { if(document.getElementById('matrix')) selectNode(document.getElementById('matrix')); }, 300);
+        });
+        window.addEventListener('resize', () => setTimeout(drawLines, 50));
+        
+        document.querySelectorAll('.node-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectNode(card);
+            });
+        });
+        
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                alert(`切换到: ${this.innerText}`);
+            });
+        });
+        
+        // 缩放按钮
+        document.getElementById('zoomInBtn')?.addEventListener('click', () => { if(currentZoom < 150) { currentZoom += 10; applyZoom(); } });
+        document.getElementById('zoomOutBtn')?.addEventListener('click', () => { if(currentZoom > 60) { currentZoom -= 10; applyZoom(); } });
+        
+        // 跳转按钮
+        document.getElementById('backBtn').addEventListener('click', () => { window.location.href = 'templates.html'; });
+        document.getElementById('backToTemplates').addEventListener('click', () => { window.location.href = 'templates.html'; });
+        document.getElementById('versionBtn').addEventListener('click', () => { window.location.href = 'version-history.html'; });
+        document.getElementById('versionHistoryBtn').addEventListener('click', () => { window.location.href = 'version-history.html'; });
+        document.getElementById('exportBtn').addEventListener('click', () => { window.location.href = 'export.html'; });
+        document.getElementById('exportPageBtn').addEventListener('click', () => { window.location.href = 'export.html'; });
+        document.getElementById('exportBtnTop').addEventListener('click', () => { window.location.href = 'export.html'; });
+        document.getElementById('shareBtn').addEventListener('click', () => { alert('📎 分享链接已复制 (解决方案驱动高级模板)'); });
+        
+        // 创建项目按钮
+        document.querySelector('.create-project-btn').addEventListener('click', () => { alert('🚀 创建新项目: 基于解决方案驱动高级模板'); });
+        document.querySelector('.upgrade-btn').addEventListener('click', () => { alert('⚡ 升级专业版解锁更多企业级功能'); });
+        
+        // 最近使用项点击
+        document.querySelectorAll('.recent-item').forEach(item => {
+            item.addEventListener('click', () => { alert(`打开最近项目: ${item.innerText}`); });
+        });
+        
+        // 智能助手
+        document.getElementById('aiAssistant').addEventListener('click', () => {
+            alert('✨ AI设计助手\n\n我可以帮你：\n• 分析核心技术矛盾\n• 应用TRIZ创新方法\n• 生成技术进化预测\n• 评估多技术路径可行性');
+        });
+    </script>
+</body>
+</html>
